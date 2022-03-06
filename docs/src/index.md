@@ -6,6 +6,11 @@ CurrentModule = NumericalSolutionOfPartialDifferentialEquations
 
 Documentation for [NumericalSolutionOfPartialDifferentialEquations](https://github.com/Quejiahao/NumericalSolutionOfPartialDifferentialEquations.jl).
 
+```@contents
+```
+
+## Index
+
 ```@index
 ```
 
