@@ -2,5 +2,5 @@ using NumericalSolutionOfPartialDifferentialEquations
 using Test
 
 @testset "NumericalSolutionOfPartialDifferentialEquations.jl" begin
-    # Write your tests here.
+    @test test_solve_poissions_equation() < 0.0007856741026288639
 end

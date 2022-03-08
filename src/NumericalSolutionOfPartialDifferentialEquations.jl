@@ -1,6 +1,6 @@
 module NumericalSolutionOfPartialDifferentialEquations
 
-export construct_laplacian
+export construct_laplacian, solve_poissions_equation, test_solve_poissions_equation
 
 try
     @eval Main begin
@@ -13,6 +13,15 @@ end
 using LinearAlgebra
 using SparseArrays
 
+@doc raw"""
+    construct_laplacian(; size::Int = 32, dim::Int = 2)
+
+Construct Laplacian by this method:
+
+```math
+\boldsymbol L_{\mathrm{dim}} = \sum_{i = 1}^{m} \left( \bigotimes_{j = 1}^{i - 1} \boldsymbol I_n \right) \otimes \boldsymbol L_1 \otimes \left(\bigotimes_{j = i + 1}^{m} \boldsymbol I_n\right)
+```
+"""
 function construct_laplacian(; size::Int = 32, dim::Int = 2)
     Is = [1:size; 1:(size-1); 2:size]
     Js = [1:size; 2:size; 1:(size-1)]
@@ -35,5 +44,7 @@ function construct_laplacian(; size::Int = 32, dim::Int = 2)
 
     return lap_dim
 end
+
+include("PoissonsEquation.jl")
 
 end
