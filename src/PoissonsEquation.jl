@@ -98,6 +98,12 @@ function solve_poissions_equation(
     return solve_poissions_equation(construct_grid(f, len, wid), boundary)
 end
 
+"""
+    两个
+    # 已知精确解
+    # 无精确解 log-log plot
+    # 共轭梯度?
+"""
 function test_solve_poissions_equation(; size = 32, plotgui = false)
     bound_func = [
         (x, y) -> sin(pi * y),
@@ -125,3 +131,7 @@ function test_solve_poissions_equation(; size = 32, plotgui = false)
 
     return err
 end
+
+@doc raw"""
+    隐式时间 $\approv 2~3$ 显式时间
+"""
