@@ -74,23 +74,26 @@ Solve Poisson's equation with Dirichlet boundary conditions.
 """
 function solve_poissions_equation(
     f::Vector{T1},
-    boundary::Vector{Vector{T2}},
+    boundary::Vector{Vector{T2}};
+    solver::Function = \,
 ) where {T1<:Number,T2<:Number}
     size = length(boundary[1]) - 2
     f_with_boundary = add_boundary_condition(f ./ ((size + 1)^2), boundary)
     lap = construct_laplacian(; size = size)
-    return -lap \ f_with_boundary
+    return solver(-lap, f_with_boundary)
 end
 
 function solve_poissions_equation(
     f::T1,
     bound_func::Vector{T2},
     len::Int,
-    wid::Int = len,
+    wid::Int = len;
+    kw...,
 ) where {T1<:Function,T2<:Function}
     return solve_poissions_equation(
         construct_grid(f, len, wid),
-        construct_boundary(bound_func, len, wid),
+        construct_boundary(bound_func, len, wid);
+        kw...,
     )
 end
 
@@ -98,18 +101,20 @@ function solve_poissions_equation(
     f::Vector{T1},
     bound_func::Vector{T2},
     len::Int,
-    wid::Int = len,
+    wid::Int = len;
+    kw...,
 ) where {T1<:Number,T2<:Function}
-    return solve_poissions_equation(f, construct_boundary(bound_func, len, wid))
+    return solve_poissions_equation(f, construct_boundary(bound_func, len, wid); kw...)
 end
 
 function solve_poissions_equation(
     f::T1,
     boundary::Vector{Vector{T2}},
     len::Int,
-    wid::Int = len,
+    wid::Int = len;
+    kw...,
 ) where {T1<:Function,T2<:Number}
-    return solve_poissions_equation(construct_grid(f, len, wid), boundary)
+    return solve_poissions_equation(construct_grid(f, len, wid), boundary; kw...)
 end
 
 """
@@ -127,8 +132,9 @@ function test_solve_poissions_equation_known(;
     ],
     f = (x, y) -> (pi^2 - 1) * exp(x) * sin(pi * y),
     u = (x, y) -> exp(x) * sin(pi * y),
+    kw...,
 )
-    U = solve_poissions_equation(f, bound_func, size)
+    U = solve_poissions_equation(f, bound_func, size; kw...)
     plotgui && plot_2d_solution(U, size)
     return norm(U - construct_grid(u, size), Inf)
 end
@@ -137,12 +143,13 @@ end
     # 无精确解 log-log plot
 """
 function test_solve_poissions_equation_unknown(;
-    max_size = 512,
+    max_size = 511,
     plotgui = false,
     bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],
     f = (x, y) -> sinc(4 * x * y),
+    kw...,
 )
-    log2_max_size = floor(Int, log2(max_size))
+    log2_max_size = floor(Int, log2(max_size + 1))
     U = [solve_poissions_equation(f, bound_func, 1)]
 
     if log2_max_size < 2
@@ -150,15 +157,16 @@ function test_solve_poissions_equation_unknown(;
     end
 
     log2_err = zeros(log2_max_size - 1)
-    for i = 2 : log2_max_size
-        size = 2 ^ i - 1
-        push!(U, solve_poissions_equation(f, bound_func, size))
-        log2_err[i - 1] = log2(norm(reshape(U[i], size, size)[2:2:end,2:2:end][:] - U[i - 1], Inf))
+    for i = 2:log2_max_size
+        size = 2^i - 1
+        push!(U, solve_poissions_equation(f, bound_func, size; kw...))
+        log2_err[i-1] =
+            log2(norm(reshape(U[i], size, size)[2:2:end, 2:2:end][:] - U[i-1], Inf))
     end
 
     if plotgui
         plot_index = log2_max_size > 5 ? 5 : log2_max_size
-        plot_2d_solution(U[plot_index], 2 ^ plot_index - 1)
+        plot_2d_solution(U[plot_index], 2^plot_index - 1)
     end
 
     return U, log2_err

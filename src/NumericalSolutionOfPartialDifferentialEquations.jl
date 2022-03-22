@@ -1,6 +1,7 @@
 module NumericalSolutionOfPartialDifferentialEquations
 
 export construct_laplacian,
+    conjugate_gradient_inverse_divide,
     solve_poissions_equation,
     test_solve_poissions_equation_known,
     test_solve_poissions_equation_unknown
@@ -15,6 +16,7 @@ end
 
 using LinearAlgebra
 using SparseArrays
+using Optim
 
 @doc raw"""
     construct_laplacian(; size::Int = 32, dim::Int = 2)
@@ -60,6 +62,13 @@ function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len) where {T<:Numb
     end
 end
 
+function conjugate_gradient_inverse_divide(A, b)
+    f = x -> (x' * A / 2 - b') * x
+    g! = (G, x) -> (G[:] = (A * x - b))
+    return optimize(f, g!, zeros(length(b)), ConjugateGradient()).minimizer
+end
+
 include("PoissonsEquation.jl")
+include("HeatEquation.jl")
 
 end
