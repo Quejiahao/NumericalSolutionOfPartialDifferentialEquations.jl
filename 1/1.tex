@@ -1,0 +1,83 @@
+% !TeX program	= xelatex
+% !TeX encoding	= UTF-8
+
+%-------------------- 文类 --------------------
+\documentclass[UTF8, a4paper, 12pt, oneside, onecolumn]{article}
+
+%-------------------- 宏包 --------------------
+\input{../../template/usepackage}
+
+%-------------------- 杂项 --------------------
+\input{../../template/misc}
+
+%-------------------- 字体设置 --------------------
+\input{../../template/fonts}
+
+%-------------------- 标题样式 --------------------
+\input{../../template/title}
+
+%-------------------- 自定义符号 --------------------
+\input{../../template/symbols}
+
+%-------------------- 自定义环境 --------------------
+\input{../../template/environments}
+
+%-------------------- \item 编号 --------------------
+\input{../../template/itemstyle}
+
+%-------------------- 代码样式设置 --------------------
+\input{../../template/codestyle}
+
+%-------------------- PDF 元信息, 建模时注释掉 --------------------
+\input{../pdfinfo}
+
+%-------------------- 页眉页脚 --------------------
+\input{../headersfooters}
+
+%-------------------- 正文 --------------------
+\begin{document}
+
+\thispagestyle{plain}
+
+%\columnseprule = 1pt	% 栏线
+\begin{center}
+	{\zihao{-2}\heiti 常微分方程自测题~2} \\
+	\vspace{1.5ex}
+	{\zihao{-4}\fangsong 阙嘉豪\textsuperscript{\hyperref[auth:1]{1}}%
+	\blfootnote{\zihao{6}\heiti 作者简介: \songti 阙嘉豪~(1999—), 男, 广东深圳人, 北京师范大学数学科学学院本科生.}} \\
+	{\zihao{6}\songti \label{auth:1}(1. 北京师范大学 数学科学学院, 北京~~100875)}
+\end{center}
+
+\zihao{5}
+
+%\watermark{60}{10}{\currenttime}
+
+\part{部分}
+\section{一级标题}
+\subsection{二级标题}
+\subsubsection{三级标题}
+
+
+\begin{thebibliography}{1}
+%\setlength{\parskip}{0pt}
+%\setlength{\baselineskip}{16pt}
+%\setlength{\leftskip}{-19pt}
+%\setlength{\itemsep}{0em}
+%\setlength{\itemindent}{2em}
+%\setlength{\labelwidth}{0pt}
+%\setlength{\labelsep}{0pt}
+
+\addcontentsline{toc}{section}{参考文献}	% 将 "参考文献" 加入目录中
+
+\bibitem{RongYuan} 袁荣. 常微分方程[M]. 北京: 高等教育出版社, 2012:59,62.
+\end{thebibliography}
+%\end{multicols}
+
+\begin{appendices}
+
+\section{\bfseries Some Appendix2}\label{aaa}
+The contents...
+
+\end{appendices}
+
+\end{document}
