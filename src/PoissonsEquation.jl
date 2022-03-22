@@ -33,6 +33,15 @@ function add_boundary_condition(
     return f_with_boundary
 end
 
+"""
+    construct_boundary(
+        bound_func::Vector{T},
+        len::Int,
+        wid::Int = len,
+    ) where {T<:Function}
+
+Use `bound_func` to construct boundary conditions.
+"""
 function construct_boundary(
     bound_func::Vector{T},
     len::Int,
@@ -46,6 +55,11 @@ function construct_boundary(
     ]
 end
 
+"""
+    construct_grid(f::T, len::Int, wid::Int = len) where {T<:Function}
+
+Use `f` to construct grid.
+"""
 function construct_grid(f::T, len::Int, wid::Int = len) where {T<:Function}
     return f.(range(0.0, 1.0, wid + 2)[2:end-1]', range(1.0, 0.0, len + 2)[2:end-1])[:]
 end
@@ -63,7 +77,7 @@ function solve_poissions_equation(
     boundary::Vector{Vector{T2}},
 ) where {T1<:Number,T2<:Number}
     size = length(boundary[1]) - 2
-    f_with_boundary = add_boundary_condition(f ./ ((size + 1) ^ 2), boundary)
+    f_with_boundary = add_boundary_condition(f ./ ((size + 1)^2), boundary)
     lap = construct_laplacian(; size = size)
     return -lap \ f_with_boundary
 end
@@ -99,39 +113,53 @@ function solve_poissions_equation(
 end
 
 """
-    两个
     # 已知精确解
-    # 无精确解 log-log plot
-    # 共轭梯度?
+    # 共轭梯度?LU分解?
 """
-function test_solve_poissions_equation(; size = 32, plotgui = false)
+function test_solve_poissions_equation_known(;
+    size = 31,
+    plotgui = false,
     bound_func = [
         (x, y) -> sin(pi * y),
         (x, y) -> 0,
         (x, y) -> MathConstants.e * sin(pi * y),
         (x, y) -> 0,
-    ]
-    f(x, y) = (pi^2 - 1) * exp(x) * sin(pi * y)
-    u(x, y) = exp(x) * sin(pi * y)
+    ],
+    f = (x, y) -> (pi^2 - 1) * exp(x) * sin(pi * y),
+    u = (x, y) -> exp(x) * sin(pi * y),
+)
     U = solve_poissions_equation(f, bound_func, size)
-    err = norm(U - construct_grid(u, size), Inf)
-
-    if plotgui
-        wid = len = size
-        xs = range(0.0, 1.0, wid + 2)[2:end-1]
-        ys = range(1.0, 0.0, len + 2)[2:end-1]
-        x_grid = [x for x in xs for y in ys]
-        a_grid = [y for x in xs for y in ys]
-        @eval (@__MODULE__) begin
-            using Plots
-            theme(:orange)
-            display(plot($x_grid, $a_grid, $U, st = :surface))
-        end
-    end
-
-    return err
+    plotgui && plot_2d_solution(U, size)
+    return norm(U - construct_grid(u, size), Inf)
 end
 
-@doc raw"""
-    隐式时间 $\approv 2~3$ 显式时间
 """
+    # 无精确解 log-log plot
+"""
+function test_solve_poissions_equation_unknown(;
+    max_size = 512,
+    plotgui = false,
+    bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],
+    f = (x, y) -> sinc(4 * x * y),
+)
+    log2_max_size = floor(Int, log2(max_size))
+    U = [solve_poissions_equation(f, bound_func, 1)]
+
+    if log2_max_size < 2
+        return U
+    end
+
+    log2_err = zeros(log2_max_size - 1)
+    for i = 2 : log2_max_size
+        size = 2 ^ i - 1
+        push!(U, solve_poissions_equation(f, bound_func, size))
+        log2_err[i - 1] = log2(norm(reshape(U[i], size, size)[2:2:end,2:2:end][:] - U[i - 1], Inf))
+    end
+
+    if plotgui
+        plot_index = log2_max_size > 5 ? 5 : log2_max_size
+        plot_2d_solution(U[plot_index], 2 ^ plot_index - 1)
+    end
+
+    return U, log2_err
+end

@@ -1,6 +1,9 @@
 module NumericalSolutionOfPartialDifferentialEquations
 
-export construct_laplacian, solve_poissions_equation, test_solve_poissions_equation
+export construct_laplacian,
+    solve_poissions_equation,
+    test_solve_poissions_equation_known,
+    test_solve_poissions_equation_unknown
 
 try
     @eval Main begin
@@ -43,6 +46,18 @@ function construct_laplacian(; size::Int = 32, dim::Int = 2)
     lap_dim += kron(sparse(I, size * (dim - 1), size * (dim - 1)), lap_1d)
 
     return lap_dim
+end
+
+function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len) where {T<:Number}
+    xs = range(0.0, 1.0, wid + 2)[2:end-1]
+    ys = range(1.0, 0.0, len + 2)[2:end-1]
+    x_grid = [x for x in xs for y in ys]
+    y_grid = [y for x in xs for y in ys]
+    @eval (@__MODULE__) begin
+        using Plots
+        theme(:orange)
+        display(plot($x_grid, $y_grid, $U, st = :surface))
+    end
 end
 
 include("PoissonsEquation.jl")
