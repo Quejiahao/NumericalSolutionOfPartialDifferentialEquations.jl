@@ -6,7 +6,7 @@ export construct_laplacian,
     test_solve_poissions_equation_known,
     test_solve_poissions_equation_unknown
 
-if ENV["NOMKL"] === "1"
+if isdefined(ENV, :NOMKL) && ENV["NOMKL"] === "1"
     @info "Do not use MKL, using default BLAS"
 else
     try
