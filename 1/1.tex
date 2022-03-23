@@ -127,15 +127,18 @@ $$U = \begin{pmatrix}
 	h^2 f_{N - 1, i} + u_4(ih)
 \end{pmatrix},\quad i = 2, \cdots, N - 2,$$
 $$g_1 = \begin{pmatrix}
-	h^2 f_{1, 1} + u_1(h)\\
+	h^2 f_{1, 1} + u_1(h) + u_2(h)\\
 	h^2 f_{2, 1} + u_1(2h)\\
 	\vdots\\
-	h^2 f_{N - 1, 1} + u_1((N - 1)h)
-\end{pmatrix},\quad g_{N - 1} = \begin{pmatrix}
-	h^2 f_{1, N - 1} + u_3(h)\\
+	h^2 f_{N - 2, 1} + u_1((N - 2)h)\\
+	h^2 f_{N - 1, 1} + u_1((N - 1)h) + u_4(h)
+\end{pmatrix},$$
+$$g_{N - 1} = \begin{pmatrix}
+	h^2 f_{1, N - 1} + u_3(h) + u_2((N - 1)h)\\
 	h^2 f_{2, N - 1} + u_3(2h)\\
 	\vdots\\
-	h^2 f_{N - 1, N - 1} + u_3((N - 1)h)
+	h^2 f_{N - 2, N - 1} + u_3((N - 2)h)\\
+	h^2 f_{N - 1, N - 1} + u_3((N - 1)h) + u_4((N - 1)h)
 \end{pmatrix}.$$
 
 \subsection{相容性}
