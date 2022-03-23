@@ -9,12 +9,22 @@
 
 %-------------------- 杂项 --------------------
 \input{../../template/misc}
+\def\homeworkName{Poisson 方程 Dirichlet 边值问题的五点差分法}
+\hypersetup
+{
+	% 颜色
+	colorlinks	= true,
+	linkcolor	= black,
+	urlcolor	= red,
+	citecolor	= black,
+	anchorcolor	= blue,
+}
 
 %-------------------- 字体设置 --------------------
 \input{../../template/fonts}
 
 %-------------------- 标题样式 --------------------
-\input{../../template/title}
+\input{../title}
 
 %-------------------- 自定义符号 --------------------
 \input{../../template/symbols}
@@ -41,10 +51,9 @@
 
 %\columnseprule = 1pt	% 栏线
 \begin{center}
-	{\zihao{-2}\heiti 常微分方程自测题~2} \\
+	{\zihao{-2}\heiti \homeworkName} \\
 	\vspace{1.5ex}
-	{\zihao{-4}\fangsong 阙嘉豪\textsuperscript{\hyperref[auth:1]{1}}%
-	\blfootnote{\zihao{6}\heiti 作者简介: \songti 阙嘉豪~(1999—), 男, 广东深圳人, 北京师范大学数学科学学院本科生.}} \\
+	{\zihao{-4}\fangsong 阙嘉豪\textsuperscript{\hyperref[auth:1]{1}}} \\
 	{\zihao{6}\songti \label{auth:1}(1. 北京师范大学 数学科学学院, 北京~~100875)}
 \end{center}
 
@@ -52,31 +61,235 @@
 
 %\watermark{60}{10}{\currenttime}
 
-\part{部分}
-\section{一级标题}
-\subsection{二级标题}
-\subsubsection{三级标题}
+\section{模型问题}
 
+考虑 $\Omega := (0, 1) \times (0, 1)$ 上的 Poisson 方程的 Dirichlet 边值问题:
+\begin{equation}\label{equ:DirichletProblem}
+	\lb\begin{array}{lr@{~}l}
+		-\D u(x, y) = f(x, y),	&	\forall (x, y) &\in \Omega, \\
+		u(0, y) = u_1(y),\quad u(1, y) = u_3(y),	&	\forall y &\in [0, 1], \\
+		u(x, 0) = u_2(x),\quad u(x, 1) = u_4(x),	&	\forall x &\in [0, 1].
+	\end{array}\rd
+\end{equation}
 
-\begin{thebibliography}{1}
-%\setlength{\parskip}{0pt}
-%\setlength{\baselineskip}{16pt}
-%\setlength{\leftskip}{-19pt}
-%\setlength{\itemsep}{0em}
-%\setlength{\itemindent}{2em}
-%\setlength{\labelwidth}{0pt}
-%\setlength{\labelsep}{0pt}
+\section{差分逼近}
 
-\addcontentsline{toc}{section}{参考文献}	% 将 "参考文献" 加入目录中
+\subsection{差分格式}
 
-\bibitem{RongYuan} 袁荣. 常微分方程[M]. 北京: 高等教育出版社, 2012:59,62.
-\end{thebibliography}
-%\end{multicols}
+取空间步长 $\D x = \D y = h = \dfrac{1}{N}$, 则由网格线
+$$x_i = i\D x,\quad y_j = j\D y,\quad i, j = 0, 1, \cdots, N$$
+定义的指标集为 
+$$J = \lrb{(i, j) : (x_i, y_j) \in \ol{\Omega}}.$$
+记 Dirichlet 边界节点指标集为
+$$J_D = \lrb{(i, j) : (x_i, y_j) \in \pa \Omega}.$$
+将函数 $u$, $f$ 和网格函数 $U$ 在节点 $(x_i, y_j)$ 上的取值分别记为 $u_{i,j}$, $f_{i,j}$ 和 $U_{i,j}$.
+
+由 Poisson 方程的五点差分格式和边值问题 \eqref{equ:DirichletProblem} 给出的 Dirichlet 边界条件得到线性方程组:
+\begin{equation*}%\label{equ:LinearEquation}
+	\lb\begin{array}{ll}
+		-L_h U_{i, j} := \dfrac{4U_{i, j} - U_{i - 1, j} - U_{i, j - 1} - U_{i + 1, j} - U_{i, j + 1}}{h^2} = f_{i, j},	&	1 \leq i, j \leq N - 1, \\
+		u_{0, j} = u_1(jh),\quad u_{N, j} = u_3(jh),	&	0 \leq j \leq N, \\
+		u_{i, 0} = u_2(ih),\quad u_{i, N} = u_4(ih),	&	0 \leq i \leq N.
+	\end{array}\rd
+\end{equation*}
+整理写成矩阵形式 $L_2 U = g$, 其中
+$$L_2 = \begin{pmatrix}
+		A	&	-I		&			&			&	\\
+		-I	&	A		&	-I		&			&	\\
+			&	\ddots	&	\ddots	&	\ddots	&	\\
+			&			&	-I		&	A		&	-I	\\
+			&			&			&	-I		&	A	\\
+	\end{pmatrix},\quad A = \begin{pmatrix}
+	4	&	-1	&		&		&	\\
+	-1	&	4	&	-1	&		&	\\
+		&	-1	&	\ddots	&	\ddots	&	\\
+		&		&	\ddots	&	4	&	-1\\
+		&		&		&	-1	&	4
+	\end{pmatrix}_{(N - 1) \times (N - 1)},$$
+$$U = \begin{pmatrix}
+	U_{1, 1}\\
+	U_{2, 1}\\
+	\vdots\\
+	U_{N - 1, 1}\\
+	U_{1, 2}\\
+	U_{2, 2}\\
+	\vdots\\
+	U_{N - 1, N - 1}
+\end{pmatrix},\quad g = \begin{pmatrix}
+	g_1\\
+	\vdots\\
+	g_{N - 1}
+\end{pmatrix},\quad g_i = \begin{pmatrix}
+	h^2 f_{1, i} + u_2(ih)\\
+	h^2 f_{2, i}\\
+	\vdots\\
+	h^2 f_{N - 2, i}\\
+	h^2 f_{N - 1, i} + u_4(ih)
+\end{pmatrix},\quad i = 2, \cdots, N - 2,$$
+$$g_1 = \begin{pmatrix}
+	h^2 f_{1, 1} + u_1(h)\\
+	h^2 f_{2, 1} + u_1(2h)\\
+	\vdots\\
+	h^2 f_{N - 1, 1} + u_1((N - 1)h)
+\end{pmatrix},\quad g_{N - 1} = \begin{pmatrix}
+	h^2 f_{1, N - 1} + u_3(h)\\
+	h^2 f_{2, N - 1} + u_3(2h)\\
+	\vdots\\
+	h^2 f_{N - 1, N - 1} + u_3((N - 1)h)
+\end{pmatrix}.$$
+
+\subsection{相容性}
+
+假设边值问题 \eqref{equ:DirichletProblem} 的真解 $u$ 充分光滑, 则由 $u$ 在 $(x_i, y_j)$ 的 Taylor 展式可得
+\begin{align*}
+	T_{i, j} :&= L_hu_{i, j} - (\D u)_{i, j} = L_hu_{i, j} + f_{i, j}\\
+	&= \dfrac{1}{12}h^2\(\pa_x^4 u + \pa_y^4 u\)_{i, j} + \dfrac{1}{360}h^4\(\pa_x^6 u + \pa_y^6 u\)_{i, j} + O\(h^6\),\quad \forall (i, j) \in J_\Omega.
+\end{align*}
+则对于截断误差 $T_h := \lrb{T_{i, j}}_{(i, j) \in \Omega}$ 有
+$$\lim_{h \to 0} \lrvv{T_h}_\infty = \lim_{h \to 0} \max_{(i, j) \in J_\Omega} \lrv{T_{i, j}} = 0.$$
+由此知该差分格式具有相容性, 且 $\lrvv{T_h}_\infty = O\(h^2\)$, 即差分格式具有二阶精度.
+
+\subsection{稳定性}
+
+记 $F := \dmax_{(i, j) \in J_\Omega} \lrv{f_{i, j}}$, 令 $\Phi(x, y) := \(x - \dfrac{1}{2}\)^2 + \(y - \dfrac{1}{2}\)^2$, 取比较函数
+\begin{equation}\label{equ:compareFunction}
+	\Psi_{i, j}^\pm := \pm U_{i, j} + \dfrac{1}{4} F\Phi_{i, j},\quad \forall (i, j) \in J,
+\end{equation}
+于是
+$$L_h \Phi_{i, j}^\pm = \pm L_h U_{i, j} + \dfrac{1}{4} F L_h \Phi_{i, j} = \pm f_{i, j} + F \geq 0.$$
+由此, 最大值原理, $\Phi$ 非负且 $U$ 满足边界条件 $U_{i, j} = u_D\(x_i, y_j\)$, $(i, j) \in J_D$ 可得
+\begin{equation*}
+	\pm U_{i, j} \leq \pm U_{i, j} + \dfrac{1}{4} F\Phi_{i, j} \leq \max_{(i, j) \in J_D} \lrv{\(u_D\)_{i, j}} + \dfrac{1}{8}F,\quad \forall (i, j) \in J_\Omega.
+\end{equation*}
+进而
+\begin{equation*}
+	\max_{(i, j) \in J} \lrv{U_{i, j}} \leq \max_{(i, j) \in J_D} \lrv{\(u_D\)_{i, j}} + \dfrac{1}{8}F,
+\end{equation*}
+即差分格式具有稳定性.
+
+\subsection{收敛性}
+
+在 \eqref{equ:compareFunction} 式中分别将 $U_{i, j}$ 和 $F$ 替换为误差 $e_{i, j} := U_{i, j} - u_{i, j}$ 和 $\lrvv{T_h}_\infty$, 则有
+$$\lrvv{e}_\infty \leq \max_{(i, j) \in J_D} \lrv{e_{i, j}} + \dfrac{1}{8} \lrvv{T_h}_\infty \leq \dfrac{1}{96} \(\max_{(x, y) \in J_{\ol\Omega}} \lrv{\pa_x^4 u} + \max_{(x, y) \in J_{\ol\Omega}} \lrv{\pa_y^4 u}\),$$
+进而 $\dlim_{h \to 0} \lrvv{e}_\infty = 0$ 且 $\lrvv{e}_\infty = O\(h^2\)$, 即差分逼近解在 $\mathbb{L}^\infty$ 意义下是二阶收敛的.
+
+\subsection{误差分析}
+
+假设误差主项的阶数为 $\a$, 有
+\begin{equation}\label{equ:error1}
+	U_{h, \bm j} = u_{\bm j} + C_{\bm j} h^\a + o\(h^\a\).
+\end{equation}
+对于已知真解的情况, 只需计算 $\ln \lrvv{e}_\infty$ 关于 $\ln h$ 的斜率即可. 对于未知真解的情况, 需在 \ref{equ:error1} 式中取不同的 $h$, 然后做差再取对数. 如
+\begin{equation*}
+	U_{h, \bm j} - U_{h/2, \bm j} = \(1 - 2^{-\a}\)C_{\bm j} h^\a + o\(h^\a\),
+\end{equation*}
+两边取范数并取对数得
+$$\ln \lrvv{U_{h} - U_{h/2}}_\infty \approx \ln \(\(1 - 2^{-\a}\)C\) + \a \ln h.$$
+于是计算 $\ln \lrvv{U_{h} - U_{h/2}}_\infty$ 关于 $\ln h$ 的斜率可得收敛阶.
+
+\section{数值实验}
+
+分别求解下述边值问题对应的差分方程 $L_2U = g$, 得到数值解 $U_{i, j}$.
+
+\subsection{已知真解算例}
+
+取
+\begin{equation*}
+	\lb\begin{aligned}
+		f(x, y) &= \(\pi^2 - 1\)\e^x \sin (\pi y),\quad (x, y) 
+		\in \Omega,\\
+		u_1(y) &= \sin (\pi y),\quad u_3(y) = \e \sin (\pi y),\\
+		u_2(x) &= u_4(x) = 0,
+	\end{aligned}\rd
+\end{equation*}
+此时边值问题 \eqref{equ:DirichletProblem} 的解析解为 $u(x, y) = \e^x\sin (\pi y)$.
+
+$h = 2^{-5}$ 时求得的差分逼近解如图 \ref{fig:known1} 所示.
+
+\begin{figure}[H]\centering
+	\resizebox{0.9\linewidth}{!}{\input{known1.pgf}}
+	\caption{$h = 2^{-5}$ 时差分逼近解}\label{fig:known1}
+\end{figure}
+
+不同步长时误差的 $\mathbb{L}^\infty$ 范数及收敛速度如表 \ref{tab:errorNorm1} 所示. 可以看出, 随着 $h$ 的减小, 误差的 $\mathbb{L}^\infty$ 范数逐渐减小. $h$ 从 $2^{-1}$ 到 $2^{-9}$ 时, 收敛阶接近于 $2$, 但是再缩小网格时, 因 $\lrvv{e_h}_\infty$ 接近于机器精度, 收敛阶又变小了.
+
+\begin{table}[H]\centering\heiti\zihao{-5}
+	\caption{不同步长时误差的 $\mathbb{L}^\infty$ 范数及收敛速度}\label{tab:errorNorm1}
+	\begin{tabular}{|c|c|c|}\hline
+		$-\log_2 h$	&	$\lrvv{e_h}_\infty$	&	$\log_2\(\lrvv{e_h}_\infty / \lrvv{e_{h / 2}}_\infty\)$\\\hline
+		$1$	&	$1.94818276337851 \times 10^{-1}$	&	$1.92405$	\\\hline
+		$2$	&	$5.13373125805703 \times 10^{-2}$	&	$1.96026$	\\\hline
+		$3$	&	$1.31927593688654 \times 10^{-2}$	&	$1.98207$	\\\hline
+		$4$	&	$3.33943713696105 \times 10^{-3}$	&	$1.99837$	\\\hline
+		$5$	&	$8.35802510806616 \times 10^{-4}$	&	$1.99841$	\\\hline
+		$6$	&	$2.09181357501365 \times 10^{-4}$	&	$1.99990$	\\\hline
+		$7$	&	$5.22991071318923 \times 10^{-5}$	&	$1.99997$	\\\hline
+		$8$	&	$1.30750132527613 \times 10^{-5}$	&	$1.99999$	\\\hline
+		$9$	&	$3.26877185896635 \times 10^{-6}$	&	$1.99997$	\\\hline
+		$10$	&	$8.17209409920139 \times 10^{-7}$	&	$1.99956$	\\\hline
+		$11$	&	$2.04365120159977 \times 10^{-7}$	&	$1.99291$	\\\hline
+		$12$	&	$5.13429063708770 \times 10^{-8}$	&	$1.89080$	\\\hline
+		$13$	&	$1.38449633979576 \times 10^{-8}$	&	$0.88309$	\\\hline
+		$14$	&	$7.50680606564913 \times 10^{-9}$	&	\\\hline
+	\end{tabular}
+\end{table}
+
+% [0.19481827633785143, 0.05133731258057028, 0.013192759368865437, 0.0033394371369610543, 0.0008358025108066158, 0.00020918135750136457, 5.229910713189234e-5, 1.307501325276128e-5, 3.268771858966346e-6, 8.172094099201388e-7, 2.043651201599772e-7, 5.134290637087702e-8, 1.38449633979576e-8, 7.50680606564913e-9]
+
+\subsection{未知真解算例}
+
+取
+\begin{equation*}
+	\lb\begin{aligned}
+		f(x, y) &= \dfrac{\sin(4\pi xy)}{4\pi xy},\quad (x, y) 
+		\in \Omega,\\
+		u_1(y) &= u_3(y) = u_2(x) = u_4(x) = 0.
+	\end{aligned}\rd
+\end{equation*}
+
+$h = 2^{-5}$ 时求得的差分逼近解如图 \ref{fig:unknown1} 所示.
+
+\begin{figure}[H]\centering
+	\resizebox{0.9\linewidth}{!}{\input{unknown1.pgf}}
+	\caption{$h = 2^{-5}$ 时差分逼近解}\label{fig:unknown1}
+\end{figure}
+
+为对其收敛速度进行分析, 计算 $-\log_2\lrvv{U_h - U_{h / 2}}_\infty$, 如表 \ref{tab:errorNorm2} 所示. 以 $-\log_2 h$ 为横坐标, 拟合得到
+$$\log_2\lrvv{U_h - U_{h / 2}}_\infty \approx 2.009181444799865\log_2 h - 4.492800925336754,$$
+拟合曲线如图 \ref{fig:log2UhUh2infty} 所示, 故差分逼近解在 $\mathbb{L}^\infty$ 范数意义下是二阶收敛的.
+
+\begin{table}[H]\centering\heiti\zihao{-5}
+	\caption{不同步长时 $-\log_2\lrvv{U_h - U_{h / 2}}_\infty$ 的值}\label{tab:errorNorm2}
+	\begin{tabular}{|c|c|}\hline
+		$-\log_2 h$	&	$-\log_2\lrvv{U_h - U_{h / 2}}_\infty$\\\hline
+		$1$		&	$6.278314524587407$\\\hline
+		$2$		&	$8.546061248379736$\\\hline
+		$3$		&	$10.58435679097419$\\\hline
+		$4$		&	$12.59155779257177$\\\hline
+		$5$		&	$14.59260838416788$\\\hline
+		$6$		&	$16.59059047122205$\\\hline
+		$7$		&	$18.59039819231493$\\\hline
+		$8$		&	$20.59026731037038$\\\hline
+		$9$		&	$22.59027315438449$\\\hline
+		$10$	&	$24.59025888822796$\\\hline
+		$11$	&	$26.59000117687745$\\\hline
+		$12$	&	$28.58588429968780$\\\hline
+		$13$	&	$30.52135127239939$\\\hline
+	\end{tabular}
+\end{table}
+
+% log2_err = [-6.278314524587407, -8.546061248379736, -10.584356790974189, -12.591557792571772, -14.592608384167875, -16.590590471222054, -18.590398192314932, -20.590267310370375, -22.590273154384494, -24.590258888227957, -26.59000117687745, -28.5858842996878, -30.52135127239939]
+
+\begin{figure}[H]\centering
+	\resizebox{0.9\linewidth}{!}{\input{log2UhUh2infty.pgf}}
+	\caption{$-\log_2\lrvv{U_h - U_{h / 2}}_\infty$ - $-\log_2 h$ 曲线}\label{fig:log2UhUh2infty}
+\end{figure}
+
+% b, k = 4.492800925336754, 2.0091814447998653
 
 \begin{appendices}
 
-\section{\bfseries Some Appendix2}\label{aaa}
-The contents...
+\href{https://github.com/Quejiahao/NumericalSolutionOfPartialDifferentialEquations.jl}{数值实验源码}
 
 \end{appendices}
 
