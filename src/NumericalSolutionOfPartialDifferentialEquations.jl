@@ -6,12 +6,16 @@ export construct_laplacian,
     test_solve_poissions_equation_known,
     test_solve_poissions_equation_unknown
 
-try
-    @eval Main begin
-        using MKL
+if ENV["NOMKL"] === "1"
+    @info "Do not use MKL, using default BLAS"
+else
+    try
+        @eval Main begin
+            using MKL
+        end
+    catch
+        @info "MKL not found, using default BLAS"
     end
-catch
-    @info "MKL not found, using default BLAS"
 end
 
 using LinearAlgebra
@@ -50,7 +54,7 @@ function construct_laplacian(; size::Int = 32, dim::Int = 2)
     return lap_dim
 end
 
-function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len) where {T<:Number}
+function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len; kw...) where {T<:Number}
     xs = range(0.0, 1.0, wid + 2)[2:end-1]
     ys = range(1.0, 0.0, len + 2)[2:end-1]
     x_grid = [x for x in xs for y in ys]
@@ -58,7 +62,7 @@ function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len) where {T<:Numb
     @eval (@__MODULE__) begin
         using Plots
         theme(:orange)
-        display(plot($x_grid, $y_grid, $U, st = :surface))
+        display(plot($x_grid, $y_grid, $U, st = :surface; $kw...))
     end
 end
 

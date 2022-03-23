@@ -76,6 +76,7 @@ function solve_poissions_equation(
     f::Vector{T1},
     boundary::Vector{Vector{T2}};
     solver::Function = \,
+    kw...,
 ) where {T1<:Number,T2<:Number}
     size = length(boundary[1]) - 2
     f_with_boundary = add_boundary_condition(f ./ ((size + 1)^2), boundary)
@@ -135,7 +136,7 @@ function test_solve_poissions_equation_known(;
     kw...,
 )
     U = solve_poissions_equation(f, bound_func, size; kw...)
-    plotgui && plot_2d_solution(U, size)
+    plotgui && plot_2d_solution(U, size; kw...)
     return norm(U - construct_grid(u, size), Inf)
 end
 
@@ -166,8 +167,46 @@ function test_solve_poissions_equation_unknown(;
 
     if plotgui
         plot_index = log2_max_size > 5 ? 5 : log2_max_size
-        plot_2d_solution(U[plot_index], 2^plot_index - 1)
+        plot_2d_solution(U[plot_index], 2^plot_index - 1; kw...)
     end
 
     return U, log2_err
+end
+
+"""
+Need ~500 GiB Memory!!!
+"""
+function homework1()
+    for i = 1:14
+        print(test_solve_poissions_equation_known(; size = 2^i - 1))
+        print("\n")
+    end
+    log2_err = test_solve_poissions_equation_unknown(; max_size = 2^14 - 1)[2]
+    print(log2_err)
+
+    test_solve_poissions_equation_known(;
+        plotgui = true,
+        xlabel = "x",
+        ylabel = "y",
+        zlabel = "U",
+        reuse = false,
+    )
+    test_solve_poissions_equation_unknown(;
+        plotgui = true,
+        xlabel = "x",
+        ylabel = "y",
+        zlabel = "U",
+        reuse = false,
+    )
+    theme(:default)
+    b, k = [ones(13) [1:13;]] \ -log2_err
+    scatter(
+        [1:13;],
+        -log2_err;
+        markersize = 8,
+        label = "-\\log_2\\lrvv{U_h - U_{h / 2}}_\\infty",
+        xlabel = "-\\log_2 h",
+        reuse = false,
+    )
+    plot!(x -> (k * x + b), [1:13;]; label = "fitting curve")
 end
