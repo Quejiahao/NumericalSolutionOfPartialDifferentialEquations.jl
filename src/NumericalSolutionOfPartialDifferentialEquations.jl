@@ -22,6 +22,31 @@ using LinearAlgebra
 using SparseArrays
 using Optim
 
+import Base: *, \
+
+"""
+Default operation overloads for `I` (identity matrix) are too slow, so I write these overloads.
+"""
+*(J::UniformScaling{Bool}, A::AbstractVecOrMat) = J.λ ? A : zero(A)
+*(A::AbstractVecOrMat, J::UniformScaling{Bool}) = J.λ ? A : zero(A)
+\(J::UniformScaling{Bool}, A::AbstractVecOrMat) = J.λ ? A : throw(SingularException(1))
+
+function con_tri_diag(
+    size::Int,
+    main_diag::T,
+    first_above::T,
+    first_below::T = first_above,
+) where {T<:Number}
+    Is = [1:size; 1:(size-1); 2:size]
+    Js = [1:size; 2:size; 1:(size-1)]
+    Vs = [
+        fill(main_diag, size)
+        fill(first_above, size - 1)
+        fill(first_below, size - 1)
+    ]
+    return sparse(Is, Js, Vs)
+end
+
 @doc raw"""
     construct_laplacian(; size::Int = 32, dim::Int = 2)
 
@@ -32,10 +57,7 @@ Construct Laplacian by this method:
 ```
 """
 function construct_laplacian(; size::Int = 32, dim::Int = 2)
-    Is = [1:size; 1:(size-1); 2:size]
-    Js = [1:size; 2:size; 1:(size-1)]
-    Vs = [fill(-2.0, size); fill(1.0, 2 * size - 2)]
-    lap_1d = sparse(Is, Js, Vs)
+    lap_1d = con_tri_diag(size, -2.0, 1.0)
 
     if dim === 1
         return lap_1d
@@ -73,6 +95,7 @@ function conjugate_gradient_inverse_divide(A, b)
 end
 
 include("PoissonsEquation.jl")
+
 include("HeatEquation.jl")
 
 end
