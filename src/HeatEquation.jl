@@ -178,6 +178,7 @@ function test_solve_heat_equation(;
         space_step_num = space_step_num,
         time_step_num = time_step_num,
     )
+
     if plotgui
         plot_1d_heat_equ_solution(
             U1[:],
@@ -208,27 +209,30 @@ function test_solve_heat_equation(;
             kw...,
         )
     end
+
+    err1 = U1 - u_grid
+    err2 = U2 - u_grid
+    err3 = U3 - u_grid
     return [
         U1,
         U2,
         U3,
         u_grid,
-        norm(U1[:, end] - u_grid[:, end], Inf),
-        norm(U2[:, end] - u_grid[:, end], Inf),
-        norm(U3[:, end] - u_grid[:, end], Inf),
-        norm(U1[:, end] - u_grid[:, end], 2) / sqrt(space_step_num + 1),
-        norm(U2[:, end] - u_grid[:, end], 2) / sqrt(space_step_num + 1),
-        norm(U3[:, end] - u_grid[:, end], 2) / sqrt(space_step_num + 1),
+        norm(err1, Inf),
+        norm(err2, Inf),
+        norm(err3, Inf),
+        norm(norm.(eachcol(err1)), Inf) / sqrt(space_step_num + 1),
+        norm(norm.(eachcol(err2)), Inf) / sqrt(space_step_num + 1),
+        norm(norm.(eachcol(err3)), Inf) / sqrt(space_step_num + 1),
     ]
 end
 
-function homework2()
+function homework2(; mu = 10.0, i_num = 8)
     result = []
-    mu = 0.25
     thermal_diffusivity = 0.5
-    for i = 3:8
+    for i = 3:i_num
         space_step_num = 2^i - 1
-        time_step_num = Int(thermal_diffusivity * 4^i / mu)
+        time_step_num = ceil(Int, thermal_diffusivity * 4^i / mu)
         append!(
             result,
             [
@@ -240,7 +244,7 @@ function homework2()
             ],
         )
     end
-    err = [result[i][end-5:end] for i in 1:length(result)]
+    err = [result[i][end-5:end] for i = 1:length(result)]
     log2_err = [log2.(x) for x in err]
     append!(result, [[err; log2_err]])
     return result
