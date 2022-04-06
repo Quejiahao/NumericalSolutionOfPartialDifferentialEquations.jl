@@ -208,17 +208,40 @@ function test_solve_heat_equation(;
             kw...,
         )
     end
-    return [U1, U2, U3, u_grid, norm(U1[:,end] - u_grid[:,end], Inf), norm(U2[:,end]  - u_grid[:,end], Inf), norm(U3[:,end]  - u_grid[:,end], Inf)]
+    return [
+        U1,
+        U2,
+        U3,
+        u_grid,
+        norm(U1[:, end] - u_grid[:, end], Inf),
+        norm(U2[:, end] - u_grid[:, end], Inf),
+        norm(U3[:, end] - u_grid[:, end], Inf),
+        norm(U1[:, end] - u_grid[:, end], 2) / sqrt(space_step_num + 1),
+        norm(U2[:, end] - u_grid[:, end], 2) / sqrt(space_step_num + 1),
+        norm(U3[:, end] - u_grid[:, end], 2) / sqrt(space_step_num + 1),
+    ]
 end
 
 function homework2()
     result = []
     mu = 0.25
     thermal_diffusivity = 0.5
-    for i = 3:9
+    for i = 3:8
         space_step_num = 2^i - 1
         time_step_num = Int(thermal_diffusivity * 4^i / mu)
-        append!(result, [test_solve_heat_equation(; thermal_diffusivity = thermal_diffusivity, space_step_num = space_step_num, time_step_num = time_step_num)])
+        append!(
+            result,
+            [
+                test_solve_heat_equation(;
+                    thermal_diffusivity = thermal_diffusivity,
+                    space_step_num = space_step_num,
+                    time_step_num = time_step_num,
+                ),
+            ],
+        )
     end
+    err = [result[i][end-5:end] for i in 1:length(result)]
+    log2_err = [log2.(x) for x in err]
+    append!(result, [[err; log2_err]])
     return result
 end
