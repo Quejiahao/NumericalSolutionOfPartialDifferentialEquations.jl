@@ -4,9 +4,12 @@ export construct_laplacian,
     conjugate_gradient_inverse_divide,
     solve_poissions_equation,
     test_solve_poissions_equation_known,
-    test_solve_poissions_equation_unknown
+    test_solve_poissions_equation_unknown,
+    test_solve_heat_equation,
+    homework1,
+    homework2
 
-if isdefined(ENV, :NOMKL) && ENV["NOMKL"] === "1"
+if haskey(ENV, "NOMKL") && ENV["NOMKL"] === "1"
     @info "Do not use MKL, using default BLAS"
 else
     try
