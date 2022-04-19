@@ -9,10 +9,6 @@ N L^\infty order L^2 order
 sparse div???
 """
 
-function construct_initial(initial::T; space_step_num::Int = 31, kw...) where {T<:Function}
-    return initial.(range(0.0, 1.0, space_step_num + 2)[2:end-1])
-end
-
 function construct_heat_grid(
     u::T;
     time_step_num::Int = 1024,

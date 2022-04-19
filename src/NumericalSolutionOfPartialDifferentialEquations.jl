@@ -79,6 +79,10 @@ function construct_laplacian(; size::Int = 32, dim::Int = 2)
     return lap_dim
 end
 
+function construct_initial(initial::T; space_step_num::Int = 31, kw...) where {T<:Function}
+    return initial.(range(0.0, 1.0, space_step_num + 2)[2:end-1])
+end
+
 function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len; kw...) where {T<:Number}
     xs = range(0.0, 1.0, wid + 2)[2:end-1]
     ys = range(1.0, 0.0, len + 2)[2:end-1]
@@ -100,5 +104,7 @@ end
 include("PoissonsEquation.jl")
 
 include("HeatEquation.jl")
+
+include("ConvectionDiffusionEquation.jl")
 
 end
