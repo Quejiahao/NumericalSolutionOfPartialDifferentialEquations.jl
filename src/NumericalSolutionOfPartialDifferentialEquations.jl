@@ -7,7 +7,8 @@ export construct_laplacian,
     test_solve_poissions_equation_unknown,
     test_solve_heat_equation,
     homework1,
-    homework2
+    homework2,
+    homework3
 
 if haskey(ENV, "NOMKL") && ENV["NOMKL"] === "1"
     @info "Do not use MKL, using default BLAS"
@@ -40,14 +41,26 @@ function con_tri_diag(
     first_above::T,
     first_below::T = first_above,
 ) where {T<:Number}
-    Is = [1:size; 1:(size-1); 2:size]
-    Js = [1:size; 2:size; 1:(size-1)]
-    Vs = [
-        fill(main_diag, size)
-        fill(first_above, size - 1)
-        fill(first_below, size - 1)
-    ]
-    return sparse(Is, Js, Vs)
+    Is, Js, Vs = Int[], Int[], T[]
+    if main_diag !== zero(main_diag)
+        Is = [Is; 1:size]
+        Js = [Js; 1:size]
+        Vs = [Vs; fill(main_diag, size)]
+    end
+    if first_above !== zero(first_above)
+        Is = [Is; 1:(size-1)]
+        Js = [Js; 2:size]
+        Vs = [Vs; fill(first_above, size - 1)]
+    end
+    if first_below !== zero(first_below)
+        Is = [Is; 2:size]
+        Js = [Js; 1:(size-1)]
+        Vs = [Vs; fill(first_below, size - 1)]
+    end
+    if length(Is) === 0
+        return spzeros(size, size)
+    end
+    return sparse(Is, Js, Vs, size, size)
 end
 
 @doc raw"""
@@ -79,8 +92,13 @@ function construct_laplacian(; size::Int = 32, dim::Int = 2)
     return lap_dim
 end
 
-function construct_initial(initial::T; space_step_num::Int = 31, kw...) where {T<:Function}
-    return initial.(range(0.0, 1.0, space_step_num + 2)[2:end-1])
+function construct_initial(
+    initial::T1;
+    space_step_num::Int = 31,
+    total_space::T2 = 1.0,
+    kw...,
+) where {T1<:Function,T2<:Number}
+    return initial.(range(0.0, total_space, space_step_num + 2)[2:end-1])
 end
 
 function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len; kw...) where {T<:Number}

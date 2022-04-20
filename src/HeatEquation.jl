@@ -9,15 +9,20 @@ N L^\infty order L^2 order
 sparse div???
 """
 
+"""
+    Also used by convection diffusion equation
+"""
 function construct_heat_grid(
-    u::T;
+    u::T1;
     time_step_num::Int = 1024,
     space_step_num::Int = 31,
+    total_time::T2 = 1.0,
+    total_space::T3 = 1.0,
     kw...,
-) where {T<:Function}
+) where {T1<:Function,T2<:Number,T3<:Number}
     return u.(
-        range(0.0, 1.0, space_step_num + 2)[2:end-1],
-        range(0.0, 1.0, time_step_num + 1)',
+        range(0.0, total_time, space_step_num + 2)[2:end-1],
+        range(0.0, total_space, time_step_num + 1)',
     )
 end
 
@@ -119,14 +124,19 @@ function solve_heat_equation_crank_nicolson(
     return solve_heat_equation(thermal_diffusivity, initial; theta = 0.5, kw...)
 end
 
+"""
+    Also used by convection diffusion equation
+"""
 function plot_1d_heat_equ_solution(
-    U::Vector{T},
+    U::Vector{T1},
     space_step_num::Int,
     time_step_num::Int;
+    total_space::T2 = 1.0,
+    total_time::T3 = 1.0,
     kw...,
-) where {T<:Number}
-    xs = range(0.0, 1.0, space_step_num + 2)[2:end-1]
-    ts = range(0.0, 1.0, time_step_num + 1)
+) where {T1<:Number,T2<:Number,T3<:Number}
+    xs = range(0.0, total_space, space_step_num + 2)[2:end-1]
+    ts = range(0.0, total_time, time_step_num + 1)
     x_grid = [x for t in ts for x in xs]
     t_grid = [t for t in ts for x in xs]
     @eval (@__MODULE__) begin
