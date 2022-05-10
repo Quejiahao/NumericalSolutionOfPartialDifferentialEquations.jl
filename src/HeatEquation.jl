@@ -21,8 +21,8 @@ function construct_heat_grid(
     kw...,
 ) where {T1<:Function,T2<:Number,T3<:Number}
     return u.(
-        range(0.0, total_time, space_step_num + 2)[2:end-1],
-        range(0.0, total_space, time_step_num + 1)',
+        range(0.0, total_space, space_step_num + 2)[2:end-1],
+        range(0.0, total_time, time_step_num + 1)',
     )
 end
 

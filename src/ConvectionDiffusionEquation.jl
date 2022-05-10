@@ -7,14 +7,14 @@ function con_pre_wave_factor_upwind(;
     kw...,
 ) where {T<:Number}
     if nu > zero(nu)
-        pre_wave_factor = con_tri_diag(space_step_num, 1.0 - nu, nu, 0.0)
+        pre_wave_factor = con_tri_diag(space_step_num, 1.0 - nu, 0.0, nu)
         if periodic
-            pre_wave_factor[end, 1] = nu
+            pre_wave_factor[1, end] = nu
         end
     elseif nu < zero(nu)
-        pre_wave_factor = con_tri_diag(space_step_num, 1.0 + nu, 0.0, -nu)
+        pre_wave_factor = con_tri_diag(space_step_num, 1.0 + nu, -nu, 0.0)
         if periodic
-            pre_wave_factor[1, end] = -nu
+            pre_wave_factor[end, 1] = -nu
         end
     else
         return I
@@ -32,12 +32,12 @@ function con_pre_wave_factor_lax_wendroff(;
         pre_wave_factor = con_tri_diag(
             space_step_num,
             1.0 - nu^2,
-            0.5 * nu * (nu + 1.0),
             0.5 * nu * (nu - 1.0),
+            0.5 * nu * (nu + 1.0),
         )
         if periodic
-            pre_wave_factor[end, 1] = 0.5 * nu * (nu + 1.0)
-            pre_wave_factor[1, end] = 0.5 * nu * (nu - 1.0)
+            pre_wave_factor[1, end] = 0.5 * nu * (nu + 1.0)
+            pre_wave_factor[end, 1]= 0.5 * nu * (nu - 1.0)
         end
     elseif nu < zero(nu)
         error(
@@ -64,19 +64,19 @@ function con_pre_wave_factor_beam_warming(;
     end
     size = space_step_num
     main_diag = 0.5 * (nu - 1.0) * (nu - 2.0)
-    first_above = nu * (2 - nu)
-    second_above = 0.5 * nu * (nu - 1.0)
-    Is = [1:size; 1:(size-1); 1:(size-2)]
-    Js = [1:size; 2:size; 3:size]
+    first_below = nu * (2 - nu)
+    second_below = 0.5 * nu * (nu - 1.0)
+    Is = [1:size; 2:size; 3:size]
+    Js = [1:size; 1:(size-1); 1:(size-2)]
     Vs = [
         fill(main_diag, size)
-        fill(first_above, size - 1)
-        fill(second_above, size - 2)
+        fill(first_below, size - 1)
+        fill(second_below, size - 2)
     ]
     if periodic
-        Is = [Is; size - 1; size; size]
-        Js = [Js; 1; 2; 1]
-        Vs = [Vs; second_above; second_above; first_above]
+        Is = [Is; 1; 2; 1]
+        Js = [Js; size - 1; size; size]
+        Vs = [Vs; second_below; second_below; first_below]
     end
     return sparse(Is, Js, Vs)
 end
@@ -185,5 +185,28 @@ function test_solve_conv_diff_equation(;
 end
 
 function homework3(; kw...,)
-    test_solve_conv_diff_equation(; kw...,)
+    sine_wave = Dict(
+        :velocity => 1.0,
+        :initial => x -> sin(pi * x),
+        :u => (x, t) -> sin(pi * (x - t)),
+        :total_space => 2.0,
+        :space_step_num => 31,
+        :total_time => 1.0,
+        :time_step_num => 512,
+        :plotgui => true
+    )
+    square_wave = Dict(
+        :velocity => 1.0,
+        :initial => x -> ((x > 1.0) ? 1.0 : 3.0),
+        :u => (x, t) -> ((x - t > 1.0) ? 1.0 : 3.0),
+        :total_space => 3.0,
+        :space_step_num => 31,
+        :total_time => 0.6,
+        :time_step_num => 512,
+        :plotgui => true
+    )
+    # triangle_wave = Dict(
+
+    test_solve_conv_diff_equation(; sine_wave..., kw...,)
+    # test_solve_conv_diff_equation(; square_wave..., kw...,)
 end
