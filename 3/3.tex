@@ -1,0 +1,488 @@
+% !TeX program	= xelatex
+% !TeX encoding	= UTF-8
+
+%-------------------- 文类 --------------------
+\documentclass[UTF8, a4paper, 12pt, oneside, onecolumn]{article}
+
+%-------------------- 宏包 --------------------
+\input{../../template/usepackage}
+
+%-------------------- 杂项 --------------------
+\input{../../template/misc}
+\def\homeworkName{双曲型偏微分方程的差分方法}
+\hypersetup
+{
+	% 颜色
+	colorlinks	= true,
+	linkcolor	= black,
+	urlcolor	= red,
+	citecolor	= black,
+	anchorcolor	= blue,
+}
+
+%-------------------- 字体设置 --------------------
+\input{../../template/fonts}
+
+%-------------------- 标题样式 --------------------
+\input{../title}
+
+%-------------------- 自定义符号 --------------------
+\input{../../template/symbols}
+
+%-------------------- 自定义环境 --------------------
+\input{../../template/environments}
+
+%-------------------- \item 编号 --------------------
+\input{../../template/itemstyle}
+
+%-------------------- 代码样式设置 --------------------
+\input{../../template/codestyle}
+
+%-------------------- PDF 元信息, 建模时注释掉 --------------------
+\input{../pdfinfo}
+
+%-------------------- 页眉页脚 --------------------
+\input{../headersfooters}
+\usepackage[ntheorem]{empheq}
+
+%-------------------- 正文 --------------------
+\begin{document}
+
+\thispagestyle{plain}
+
+%\columnseprule = 1pt	% 栏线
+\begin{center}
+	{\zihao{-2}\heiti \homeworkName} \\
+	\vspace{1.5ex}
+	{\zihao{-4}\fangsong 阙嘉豪\textsuperscript{\hyperref[auth:1]{1}}} \\
+	{\zihao{6}\songti \label{auth:1}(1. 北京师范大学 数学科学学院, 北京~~100875)}
+\end{center}
+
+\zihao{5}
+
+%\watermark{60}{10}{\currenttime}
+
+\section{一阶双曲方程模型问题}
+
+考虑 $\Omega := (0, 1)$ 上具有周期边界条件的一阶线性双曲方程初值问题:
+\begin{equation}\label{equ:ModelProblemOne}
+	\lb\begin{aligned}
+		u_t + u_{x} &= 0,	&	0 < x < x_{\max },&~t > 0,\\%		\label{equ:ModelProblemOne1}\\
+		u(x, 0) &= u^0(x),	&	0 \leq x \leq x_{\max }.&	\\
+		% u(x, t) &= u\(x_{\max }, t\),	&	&~t > 0.%		\label{equ:ModelProblemOne3}
+	\end{aligned}\rd
+\end{equation}
+其中 $x_{\max }$ 为给定的区间最大值, $u^0$ 为给定的初值函数. 还需给定边界条件, 后面的数值算例中会分别给出. 下面分别使用迎风格式, Lax-Wendroff 格式和 Beam-Warming 格式来求解问题 \eqref{equ:ModelProblemOne}.
+
+\section{差分逼近}
+
+\subsection{迎风格式}
+
+对初值问题 \eqref{equ:ModelProblemOne}, 用关于时间的向前差分算子 $\dfrac{\D_{+t}}{\D t}$ 逼近 $\dfrac{\pa }{\pa t}$, 用 $\dfrac{\D_{-x}}{\D x}$ 逼近 $\dfrac{\pa }{\pa x}$ 后得到显式差分格式:
+\begin{equation}
+	\lb\begin{aligned}
+		U_{j}^{m + 1} &= (1 - \nu ) U_j^m + \nu U_{j - 1}^m,	&	0 &\leq j \leq N,	&	0	\leq m \leq M,\\
+		U_j^0 &= u^0(jh),	&	0 &\leq j \leq N,	&
+	\end{aligned}\rd
+\end{equation}
+其中 $\nu = \dfrac{\tau }{h}$, $h = \dfrac{1}{N}$, $M = \l[\dfrac{t_{\max}}{\tau }\r]$.
+
+\subsubsection{截断误差}
+
+设问题 \eqref{equ:ModelProblemOne} 的解 $u$ 充分光滑, 利用 Taylor 展开式可得:
+\begin{align*}
+	T_j^m &= \dfrac{u_j^{m + 1} - u_j^m}{\tau } + \dfrac{u_j^{m} - u_{j - 1}^m}{h} - \l[\dfrac{\pa u}{\pa t} + \dfrac{\pa u}{\pa x}\r]_j^m\\
+	&= \dfrac{1}{2} \l[\tau u_{tt} - hu_{xx}\r]_j^m + \dfrac{1}{6} \l[\tau u_{ttt} + hu_{xxx}\r]_j^m + \cdots\\
+	&= -\l[\dfrac{1}{2} h(1 - \nu )u_{xx} + \dfrac{1}{6} h^2 \(1 - \nu^2 \) u_{xxx} + \cdots\r]\\
+	&= O(h),
+\end{align*}
+可见迎风格式的局部阶段误差只有一阶精度. 更确切地说, 只要问题 \eqref{equ:ModelProblemOne} 的解 $u$ 的二阶导数有界, 就有
+$$T_h = \max \lrb{\lrv{T_j^m}} = O(\tau + h).$$
+
+\subsubsection{稳定性, 收敛性}
+
+差分逼近解的误差 $e_j^m = U_j^m - u_j^m$ 满足方程
+$$e_j^m = \(1 - |\nu|\) e_j^{m} + |\nu |e_{j - 1}^{m} - \tau T_j^m.$$
+迎风格式满足 CFL 条件时, 即 $|\nu | \leq 1$ 时, 格式满足最大值原理. 于是有估计:
+$$\max_j \lrv{e_j^{m + 1}} \leq \max_j \lrv{e_j^m} + \tau \max_j \lrv{T_j^m} \leq \max_j \lrv{e_j^0} + t_{\max } \max_{j, m} \lrv{T_{j}^m},\quad \forall (m + 1) \tau \leq t_{\max }.$$
+即 $|\nu | \leq 1$ 时格式 $\mathbb{L}^\infty$ 稳定.
+
+又将 Fourier 波形 $U_j^m := \lambda_k^m \e^{\i kjh}$ 代入格式, 有
+$$\lrv{\lambda_k}^2 = \(\(1 - |\nu |\) + |\nu|\cos kh\)^2 + \( |\nu | \sin kh\)^2 = 1 - 4|\nu |\(1 - |\nu |\)\sin^2 \dfrac{1}{2}kh \leq 1,$$
+即 $|\nu | \leq 1$ 时, 任取 $k \in \Z$ 都有 $\lrv{\lambda_k} \leq 1$, 格式 $\mathbb{L}^2$ 稳定.
+
+从而, 当问题 \eqref{equ:ModelProblemOne} 的解 $u$ 的二阶导数有界时, 沿着任意满足 CFL 条件的加密路径迎风格式为收敛的且具有一阶逼近精度.
+
+\subsection{Lax-Wendroff 格式}
+
+由 Lax-Wendroff 格式及初值问题 \eqref{equ:ModelProblemOne} 得到递推公式:
+\begin{equation}
+	\lb\begin{aligned}
+		U_{j}^{m + 1} &= -\dfrac{1}{2}\nu (1 - \nu ) U_{j + 1}^m + \(1 - \nu^2 \) U_{j}^m	&&&\\
+		&\quad + \dfrac{1}{2} \nu (1 + \nu ) U_{j - 1}^m,	&	0 &\leq j \leq N,	&	0	\leq m \leq M,\\
+		U_j^0 &= u^0(jh),	&	0 &\leq j \leq N.	&
+	\end{aligned}\rd
+\end{equation}
+
+\subsubsection{截断误差}
+
+由迎风格式已知
+\begin{equation}\label{equ:lax_generate}
+	\dfrac{u_j^{m + 1} - u_j^m}{\tau } + \dfrac{u_j^{m} - u_{j - 1}^m}{h} = - \dfrac{1}{2} h(1 - \nu )\l[ u_{xx} \r]_j^m + O\(h^2\).
+\end{equation}
+将 \eqref{equ:lax_generate} 式中 $\l[ u_{xx} \r]_j^m$ 用二阶中心差商 $\dfrac{\de_x^2 u_j^m}{h^2}$ 替代:
+$$\l[ u_{xx} \r]_j^m = \dfrac{\de_x^2 u_j^m}{h^2} + O\(h^2 \),$$
+则可得截断误差为二阶的 Lax-Wendroff 格式.
+
+\subsubsection{稳定性, 收敛性}
+
+易知, Lax-Wendroff 格式的 CFL 条件为 $|\nu | \leq 1$. 由于格式右端的系数不可能同号, Lax-Wendroff 格式不可能满足最大值原理, 故没有 $\mathbb{L}^\infty$ 稳定性.
+
+又将 Fourier 波形 $U_j^m := \lambda_k^m \e^{\i kjh}$ 代入格式, 有
+$$\lrv{\lambda_k}^2 = 1 - 4\nu^2 \(1 - \nu^2 \) \sin^4 \dfrac{kh}{2}.$$
+又 $|\nu | \leq 1$ 时, 任取 $k \in \Z$ 都有 $\lrv{\lambda_k }^2 \leq 1$. 故 $|\nu | \leq 1$ 时 Lax-Wendroff 格式 $\mathbb{L}^2$ 稳定.
+
+\subsection{Beam-Warming 格式}
+
+由 Lax-Wendroff 格式及初值问题 \eqref{equ:ModelProblemOne} 得到递推公式:
+\begin{equation}
+	\lb\begin{aligned}
+		U_{j}^{m + 1} &= \dfrac{1}{2} (1 - \nu )(2 - \nu ) U_{j}^m + \nu \(2 - \nu \) U_{j - 1}^m	&&&\\
+		&\quad - \dfrac{1}{2} \nu (1 - \nu ) U_{j - 2}^m,	&	0 &\leq j \leq N,	&	0	\leq m \leq M,\\
+		U_j^0 &= u^0(jh),	&	0 &\leq j \leq N.	&
+	\end{aligned}\rd
+\end{equation}
+
+\subsubsection{截断误差}
+
+将 \eqref{equ:lax_generate} 式中 $\l[ u_{xx} \r]_j^m$ 用二阶中心差商 $\dfrac{\de_x^2 u_{j - 1}^m}{h^2}$ 替代:
+$$\l[ u_{xx} \r]_j^m = \dfrac{\de_x^2 u_{j - 1}^m}{h^2} + O\(h^2 \),$$
+则可得截断误差为二阶的 Beam-Warming 格式.
+
+\subsubsection{稳定性, 收敛性}
+
+易知, Beam-Warming 格式的 CFL 条件为 $|\nu | \leq 1$. 由于格式右端的系数不可能同号, Beam-Warming 格式不可能满足最大值原理, 故没有 $\mathbb{L}^\infty$ 稳定性.
+
+又将 Fourier 波形 $U_j^m := \lambda_k^m \e^{\i kjh}$ 代入格式, 有
+$$\lrv{\lambda_k}^2 = 1 - 4\nu (2 - \nu ) \(1 - \nu^2 \) \sin^4 \dfrac{kh}{2}.$$
+又 $0 \leq \nu \leq 2$ 时, 任取 $k \in \Z$ 都有 $\lrv{\lambda_k }^2 \leq 1$. 故 $|\nu | \leq 2$ 时 Beam-Warming 格式 $\mathbb{L}^2$ 稳定.
+
+\section{数值实验}
+
+下面用三种数值格式分别求解正弦波问题:
+\begin{equation}\label{equ:sine_wave_con}
+	\lb \begin{aligned}
+		u_t + u_{x} &= 0,	&	0 < x &< x_{\max },&~t > 0,\\
+		u^0(x) &= \sin(\pi x),	&	x_{\max } &= 1,&\\
+		u(x, t) &= u\(x_{\max }, t\),	&&	&~t > 0.
+	\end{aligned}\rd
+\end{equation}
+和方波问题:
+\begin{equation}\label{equ:squa_wave_con}
+	\lb \begin{aligned}
+		u_t + u_{x} &= 0,\quad	0 < x < x_{\max }, t > 0,\\
+		u^0(x) &= \lb \begin{array}{ll}
+			3,	&	0 \leq x \leq 1,\\
+			1,	&	1 < x \leq 3,
+		\end{array} \rd\\
+		u(0, t) &= 3,\quad u(3, t) = 1.
+	\end{aligned} \rd
+\end{equation}
+解析解分别为 $u(x, t) = \sin\( \pi (x - t)\)$ 和
+$$u(x, t) = \lb \begin{array}{ll}
+	3,	&	t \leq x \leq t + 1,\\
+	1,	&	t + 1 < x \leq 3,
+\end{array} \rd \quad t < 2.$$
+
+\subsection{迎风格式}
+
+取 $\nu = 0.5 \leq 1$, 满足 CFL 条件. 对正弦波问题 \eqref{equ:sine_wave_con} 求解得到误差及收敛阶如表 \ref{tab:upwind_err} 所示.
+
+\begin{table}[H]\centering\heiti\zihao{-5}
+	\caption{迎风格式不同步长时的 $\mathbb{L}^2$, $\mathbb{L}^\infty$ 误差及收敛阶}\label{tab:upwind_err}
+	\begin{tabular}{|c|c|c|c|c|}\hline
+		收敛阶	&	$\mathbb{L}^2$ 误差	&	$h$	&	$\mathbb{L}^\infty$ 误差		&	收敛阶\\\hline
+					&	$1.68359 \times 10^{-1}$	&	$2^{-4}$	&	$2.35319 \times 10^{-1}$	&			\\\hline
+		0.820918	&	$9.53050 \times 10^{-2}$	&	$2^{-5}$	&	$1.34378 \times 10^{-1}$	&	0.808319\\\hline
+		0.904664	&	$5.09078 \times 10^{-2}$	&	$2^{-6}$	&	$7.19393 \times 10^{-2}$	&	0.901445\\\hline
+		0.950960	&	$2.63340 \times 10^{-2}$	&	$2^{-7}$	&	$3.72347 \times 10^{-2}$	&	0.950134\\\hline
+		0.975148	&	$1.33958 \times 10^{-2}$	&	$2^{-8}$	&	$1.89436 \times 10^{-2}$	&	0.974938\\\hline
+		0.987492	&	$6.75621 \times 10^{-3}$	&	$2^{-9}$	&	$9.55461 \times 10^{-3}$	&	0.987439\\\hline
+		0.993726	&	$3.39283 \times 10^{-3}$	&	$2^{-10}$	&	$4.79817 \times 10^{-3}$	&	0.993713\\\hline
+		0.996858	&	$1.70011 \times 10^{-3}$	&	$2^{-11}$	&	$2.40432 \times 10^{-3}$	&	0.996855\\\hline
+		0.998428	&	$8.50984 \times 10^{-4}$	&	$2^{-12}$	&	$1.20347 \times 10^{-3}$	&	0.998427\\\hline
+	\end{tabular}
+\end{table}
+
+由数值结果可以看出解序列逐步收敛到模型问题的解, 收敛阶趋于 1, 与理论结果相符. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:upwind_Uu} 所示. 可以看出 $h = 2^{-7}$ 时出现了耗散.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{upwind_7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{upwind_11.pgf}}
+	\caption{迎风格式差分逼近解 $U$ 与真解 $u$}\label{fig:upwind_Uu}
+\end{figure}
+
+取 $\nu = 2 \geq 1$, 不满足 CFL 条件. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:upwind_Uu_noCFL} 所示. 可以看到出现了震荡和错误解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{upwind_noCFL7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{upwind_noCFL11.pgf}}
+	\caption{迎风格式差分逼近解 $U$ 与真解 $u$}\label{fig:upwind_Uu_noCFL}
+\end{figure}
+
+对方波问题, 取 $\nu = 0.5$. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:upwind_square_Uu} 所示, 可以看出差分逼近解在间断点附近被磨光.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{upwind_square_7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{upwind_square_11.pgf}}
+	\caption{迎风格式差分逼近解 $U$ 与真解 $u$}\label{fig:upwind_square_Uu}
+\end{figure}
+
+取 $\nu = 2$, 结果如图 \ref{fig:upwind_square_Uu_noCFL} 所示, 出现了错误解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{upwind_square_noCFL7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{upwind_square_noCFL11.pgf}}
+	\caption{迎风格式差分逼近解 $U$ 与真解 $u$}\label{fig:upwind_square_Uu_noCFL}
+\end{figure}
+
+\subsection{Lax-Wendroff 格式}
+
+取 $\nu = 0.5 \leq 1$, 满足 CFL 条件. 对正弦波问题 \eqref{equ:sine_wave_con} 求解得到误差及收敛阶如表 \ref{tab:lax_wendroff_err} 所示.
+
+\begin{table}[H]\centering\heiti\zihao{-5}
+	\caption{Lax-Wendroff 格式不同步长时的 $\mathbb{L}^2$, $\mathbb{L}^\infty$ 误差及收敛阶}\label{tab:lax_wendroff_err}
+	\begin{tabular}{|c|c|c|c|c|}\hline
+		收敛阶	&	$\mathbb{L}^2$ 误差	&	$h$	&	$\mathbb{L}^\infty$ 误差		&	收敛阶\\\hline
+				&	$7.65220 \times 10^{-2}$	&	$2^{-4}$	&	$1.01182 \times 10^{-1}$	&		   \\\hline
+		1.97878	&	$1.94140 \times 10^{-2}$	&	$2^{-5}$	&	$2.65973 \times 10^{-2}$	&	1.92760\\\hline
+		1.99863	&	$4.85810 \times 10^{-3}$	&	$2^{-6}$	&	$6.76359 \times 10^{-3}$	&	1.97542\\\hline
+		2.00126	&	$1.21347 \times 10^{-3}$	&	$2^{-7}$	&	$1.70275 \times 10^{-3}$	&	1.98992\\\hline
+		2.00107	&	$3.03142 \times 10^{-4}$	&	$2^{-8}$	&	$4.27037 \times 10^{-4}$	&	1.99543\\\hline
+		2.00064	&	$7.57519 \times 10^{-5}$	&	$2^{-9}$	&	$1.06920 \times 10^{-4}$	&	1.99782\\\hline
+		2.00035	&	$1.89334 \times 10^{-5}$	&	$2^{-10}$	&	$2.67498 \times 10^{-5}$	&	1.99894\\\hline
+		2.00018	&	$4.73277 \times 10^{-6}$	&	$2^{-11}$	&	$6.68988 \times 10^{-6}$	&	1.99948\\\hline
+		2.00009	&	$1.18312 \times 10^{-6}$	&	$2^{-12}$	&	$1.67277 \times 10^{-6}$	&	1.99974\\\hline
+	\end{tabular}
+\end{table}
+
+由数值结果可以看出解序列逐步收敛到模型问题的解, 收敛阶趋于 1, 与理论结果相符. $h = 2^{-7}$ 和 $h = 2^{-10}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:lax_wendroff_Uu} 所示.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_10.pgf}}
+	\caption{Lax-Wendroff 格式差分逼近解 $U$ 与真解 $u$}\label{fig:lax_wendroff_Uu}
+\end{figure}
+
+取 $\nu = 2 \geq 1$, 不满足 CFL 条件. $h = 2^{-7}$ 和 $h = 2^{-10}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:lax_wendroff_Uu_noCFL} 所示. 可以看到出现了错误解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_noCFL7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_noCFL10.pgf}}
+	\caption{Lax-Wendroff 差分逼近解 $U$ 与真解 $u$}\label{fig:lax_wendroff_Uu_noCFL}
+\end{figure}
+
+对方波问题, 取 $\nu = 0.5$. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:lax_wendroff_square_Uu} 所示. 可以看出差分逼近解在间断点左侧出现震荡.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_square_7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_square_11.pgf}}
+	\caption{Lax-Wendroff 格式差分逼近解 $U$ 与真解 $u$}\label{fig:lax_wendroff_square_Uu}
+\end{figure}
+
+取 $\nu = 2$, 结果如图 \ref{fig:lax_wendroff_square_Uu_noCFL} 所示, 出现了错误解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_square_noCFL7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{lax_wendroff_square_noCFL11.pgf}}
+	\caption{Lax-Wendroff 格式差分逼近解 $U$ 与真解 $u$}\label{fig:lax_wendroff_square_Uu_noCFL}
+\end{figure}
+
+\subsection{Beam-Warming 格式}
+
+取 $\nu = 0.5 \leq 1$, 满足 CFL 条件. 对正弦波问题 \eqref{equ:sine_wave_con} 求解得到误差及收敛阶如表 \ref{tab:beam_warming_err} 所示.
+
+\begin{table}[H]\centering\heiti\zihao{-5}
+	\caption{Beam-Warming 格式不同步长时的 $\mathbb{L}^2$, $\mathbb{L}^\infty$ 误差及收敛阶}\label{tab:beam_warming_err}
+	\begin{tabular}{|c|c|c|c|c|}\hline
+		收敛阶	&	$\mathbb{L}^2$ 误差	&	$h$	&	$\mathbb{L}^\infty$ 误差		&	收敛阶\\\hline
+				&	$4.42759 \times 10^{-3}$	&	$2^{-4}$	&	$6.26065 \times 10^{-3}$	&		   \\\hline
+		1.78045	&	$1.28884 \times 10^{-3}$	&	$2^{-5}$	&	$1.78257 \times 10^{-3}$	&	1.81235\\\hline
+		1.66205	&	$4.07259 \times 10^{-4}$	&	$2^{-6}$	&	$5.67289 \times 10^{-4}$	&	1.65180\\\hline
+		1.83690	&	$1.14001 \times 10^{-4}$	&	$2^{-7}$	&	$1.59987 \times 10^{-4}$	&	1.82613\\\hline
+		1.92219	&	$3.00797 \times 10^{-5}$	&	$2^{-8}$	&	$4.23743 \times 10^{-5}$	&	1.91669\\\hline
+		1.96211	&	$7.72001 \times 10^{-6}$	&	$2^{-9}$	&	$1.08965 \times 10^{-5}$	&	1.95932\\\hline
+		1.98132	&	$1.95516 \times 10^{-6}$	&	$2^{-10}$	&	$2.76232 \times 10^{-6}$	&	1.97991\\\hline
+		1.99072	&	$4.91943 \times 10^{-7}$	&	$2^{-11}$	&	$6.95373 \times 10^{-7}$	&	1.99002\\\hline
+		1.99538	&	$1.23380 \times 10^{-7}$	&	$2^{-12}$	&	$1.74444 \times 10^{-7}$	&	1.99503\\\hline
+	\end{tabular}
+\end{table}
+
+由数值结果可以看出解序列逐步收敛到模型问题的解, 收敛阶趋于 1, 与理论结果相符. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:beam_warming_Uu} 所示.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_11.pgf}}
+	\caption{Beam-Warming 格式差分逼近解 $U$ 与真解 $u$}\label{fig:beam_warming_Uu}
+\end{figure}
+
+取 $\nu = 4 \geq 2$, 不满足 CFL 条件. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:beam_warming_Uu_noCFL} 所示. 可以看到出现了错误解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_noCFL7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_noCFL11.pgf}}
+	\caption{Beam-Warming 差分逼近解 $U$ 与真解 $u$}\label{fig:beam_warming_Uu_noCFL}
+\end{figure}
+
+对方波问题, 取 $\nu = 0.5$. $h = 2^{-7}$ 和 $h = 2^{-11}$ 时差分逼近解 $U$ 与真解 $u$ 在 $t = t_{\max }$ 时刻图像如图 \ref{fig:beam_warming_square_Uu} 所示. 可以看出差分逼近解在间断点右侧出现震荡.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_square_7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_square_11.pgf}}
+	\caption{Beam-Warming 差分逼近解 $U$ 与真解 $u$}\label{fig:beam_warming_square_Uu}
+\end{figure}
+
+取 $\nu = 4$, 结果如图 \ref{fig:beam_warming_square_Uu_noCFL} 所示, 出现了错误解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_square_noCFL7.pgf}}\quad
+	\resizebox{0.4\linewidth}{!}{\input{beam_warming_square_noCFL11.pgf}}
+	\caption{Beam-Warming 差分逼近解 $U$ 与真解 $u$}\label{fig:beam_warming_square_Uu_noCFL}
+\end{figure}
+
+\section{Burgers 方程的 Riemann 问题}
+
+\subsection{模型问题}
+
+\begin{equation}\label{equ:burgers_riemann}
+	\begin{aligned}
+		u_t + \(f(u)\)_x &= 0,	&	x &\in I, t > 0,\\
+		f(u) &= \dfrac{1}{2} u^2,	&&\\
+		u(x, 0) &= \lb\begin{array}{ll}
+			u_l,	&	x < x_0,\\
+			u_r,	&	x > x_0,
+		\end{array} \rd	&	x &\in I,
+	\end{aligned}
+\end{equation}
+其中 $I \subset \R$ 为开区间. 守恒律方程加上单个间断的分片常值初值称为 Riemann 问题. 因非线性问题的特征线会相交, 故在积分形式下求弱解.
+
+$u_l > u_r$ 时, 有唯一激波弱解
+$$u(x, t) = \lb\begin{array}{ll}
+	u_l,	&	x - x_0 < st,\\
+	u_r,	&	x - x_0 > st,
+\end{array}\rd$$
+其中, 激波速度 $s = \dfrac{u_l + u_r}{2}$.
+
+$u_l < u_r$ 时, 有稀疏波弱解
+$$u(x, t) = \lb\begin{array}{ll}
+	u_l,	&	x - x_0 < st,\\
+	\dfrac{x - x_0}{t},	&	u_l t \leq x u_r t,\\
+	u_r,	&	x - x_0 > st.
+\end{array}\rd$$
+上述两种弱解均为该情况下的粘性消失广义解.
+
+\subsection{有限体积格式}
+
+在 $\l[x_l, x_r\r] \times [t_a, t_b]$ 上对方程 \eqref{equ:burgers_riemann} 积分, 可得积分形式的守恒律方程:
+$$\dint_{x_l}^{x_r} u\(x, t_b\) \di x = \dint_{x_l}^{x_r} u\(x, t_a\) \di x - \( \dint_{t_a}^{t_b} f\( u\( x_r, t\) \) \di t - \dint_{t_a}^{t_b} f\( u\( x_l, t\) \) \di t \).$$
+在控制体 $I_j := \l[ x_{j - \frac{1}{2}}, x_{j + \frac{1}{2}} \r]$ 中, 取 $t_a = t_m$, $t_b = t_{m + 1}$, 空间单元积分平均值
+$$U_j^m = \dfrac{1}{\D x} \dint_{I_j} u\(x, t^m\) \di x,$$
+$x_{j + \frac{1}{2}}$ 上的数值通量为
+$$F_{j + \frac{1}{2}}^{m + \frac{1}{2}} = \dfrac{1}{\D t}\dint_{t_m}^{t^{m + 1}} f\( u\( x_{j + \frac{1}{2}}, t \) \) \di t.$$
+于是得到守恒差分格式
+$$U_j^{m + 1} = U_j^m - \dfrac{\D t}{\D x} \( F_{j + \frac{1}{2}}^{m + \frac{1}{2}} - F_{j - \frac{1}{2}}^{m + \frac{1}{2}} \).$$
+其中, $F_{j + \frac{1}{2}}^{m + \frac{1}{2}} := F\( U_{j + 1}^m, U_j^m \)$ 在数值方法中可以有不同的求解, 可以通过求解如下的界面两侧的 Riemann 问题确定.
+$$\lb\begin{aligned}
+	u_t + \(\dfrac{1}{2} u^2 \)_x &= 0,\\
+	u(x, 0) &= \lb\begin{array}{ll}
+		u_l,	&	x < 0,\\
+		u_r,	&	x > 0,
+	\end{array}\rd
+\end{aligned} \rd$$
+其中 $x = 0$ 代表 $x_{j + \frac{1}{2}}$ 界面, $u_l = U_j$, $u_r = U_{j + 1}$.
+
+\subsection{非守恒形式}
+
+对于问题 \eqref{equ:burgers_riemann}, 从非守恒形式 $u_t + uu_x = 0$ 出发构造迎风格式
+\begin{equation}\label{equ:upwind_rie}
+	U_j^{m + 1}\lb \begin{aligned}
+		U_j^m &- \dfrac{\tau }{h} U_j^m \(U_j^m - U_{j - 1}^m\),	&	U_j^m &\geq 0,\\
+		U_j^m &- \dfrac{\tau }{h} U_j^m \(U_{j + 1}^m - U_j^m\),	&	U_j^m &< 0.
+	\end{aligned} \rd
+\end{equation}
+取初值为
+$$u(x, 0) = \lb \begin{array}{ll}
+	1,	&	x < 0,\\
+	0,	&	x \geq 0,
+\end{array} \rd$$
+此时 $1 =: u_l > u_r := 0$. $\tau \to 0$, $h \to 0$ 时, 数值解
+$$u(x, t) = \lb \begin{array}{ll}
+	1,	&	x < 0,\\
+	0,	&	x \geq 0
+\end{array} \rd$$
+与 Rankine-Hugoniot 间断跳跃条件下的激波解
+$$u(x, t) = \lb \begin{array}{ll}
+	1,	&	x < \dfrac{t}{2},\\
+	0,	&	x \geq \dfrac{t}{2}
+\end{array} \rd$$
+矛盾.
+
+\subsection{数值实验}
+
+取 $I = [-4, 4]$, $x_0 = 0$, $t_{\max } = 2^{-5}$, $\D t = 2^{-6}$, 取不同的 $u_l$, $u_r$ 进行数值实验.
+
+\subsubsection{激波}
+
+取 $u_l = 2$, $u_r = 1$, 此时激波速度 $s = 1.5$, 结果如图 \ref{fig:burgers1} 所示, 可以看到是向前传播的.
+
+取 $u_l = -1$, $u_r = -2$, 此时激波速度 $s = -2.5$, 结果如图 \ref{fig:burgers2} 所示, 可以看到是向后传播的.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\begin{minipage}[t]{.48\linewidth}
+		\resizebox{0.99\linewidth}{!}{\input{burgers1.pgf}}
+		\caption{$u_l = 2$, $u_r = 1$}\label{fig:burgers1}
+	\end{minipage}
+	\begin{minipage}[t]{.48\linewidth}
+		\resizebox{0.99\linewidth}{!}{\input{burgers2.pgf}}
+		\caption{$u_l = -1$, $u_r = -2$}\label{fig:burgers2}
+	\end{minipage}
+\end{figure}
+
+\subsubsection{稀疏波}
+
+取 $u_l = 1$, $u_r = 2$, 结果如图 \ref{fig:burgers3} 所示.
+
+取 $u_l = -2$, $u_r = -1$, 结果如图 \ref{fig:burgers4} 所示.
+
+取 $u_l = -1$, $u_r = 2$, 结果如图 \ref{fig:burgers5} 所示, 可以看到一个明显的转折.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\begin{minipage}[t]{.32\linewidth}
+		\resizebox{0.99\linewidth}{!}{\input{burgers3.pgf}}
+		\caption{$u_l = 1$, $u_r = 2$}\label{fig:burgers3}
+	\end{minipage}
+	\begin{minipage}[t]{.32\linewidth}
+		\resizebox{0.99\linewidth}{!}{\input{burgers4.pgf}}
+		\caption{$u_l = -2$, $u_r = -1$}\label{fig:burgers4}
+	\end{minipage}
+	\begin{minipage}[t]{.32\linewidth}
+		\resizebox{0.99\linewidth}{!}{\input{burgers5.pgf}}
+		\caption{$u_l = -1$, $u_r = 2$}\label{fig:burgers5}
+	\end{minipage}
+\end{figure}
+
+\subsubsection{例 3.4 迎风格式与有限体积格式对比}
+
+利用迎风格式进行数值实验, 显然满足 CFL 条件, 区间及步长取法同上, 初值为
+$$u(x, 0) = \lb \begin{aligned}
+	1,	&	x < 0,\\
+	0,	&	x \geq 0.
+\end{aligned} \rd$$
+结果如图 \ref{fig:burgers6} 所示, 迎风格式得到了一个错误的解.
+
+\begin{figure}[H]\centering\zihao{-5}
+	\resizebox{0.6\linewidth}{!}{\input{burgers6.pgf}}
+	\caption{$u_l = 2$, $u_r = 1$}\label{fig:burgers6}
+\end{figure}
+
+\end{document}
