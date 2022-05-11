@@ -9,9 +9,6 @@ N L^\infty order L^2 order
 sparse div???
 """
 
-"""
-    Also used by convection diffusion equation
-"""
 function construct_heat_grid(
     u::T1;
     time_step_num::Int = 1024,
@@ -133,9 +130,13 @@ function plot_1d_heat_equ_solution(
     time_step_num::Int;
     total_space::T2 = 1.0,
     total_time::T3 = 1.0,
+    boundary::Bool = false,
     kw...,
 ) where {T1<:Number,T2<:Number,T3<:Number}
-    xs = range(0.0, total_space, space_step_num + 2)[2:end-1]
+    xs = range(0.0, total_space, space_step_num + 2)
+    if !boundary
+        xs = xs[2:end-1]
+    end
     ts = range(0.0, total_time, time_step_num + 1)
     x_grid = [x for t in ts for x in xs]
     t_grid = [t for t in ts for x in xs]

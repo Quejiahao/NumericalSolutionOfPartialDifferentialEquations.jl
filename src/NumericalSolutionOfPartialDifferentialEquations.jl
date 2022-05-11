@@ -15,7 +15,7 @@ if haskey(ENV, "NOMKL") && ENV["NOMKL"] === "1"
 else
     try
         @eval Main begin
-            using MKL
+            # using MKL
         end
     catch
         @info "MKL not found, using default BLAS"
@@ -96,9 +96,14 @@ function construct_initial(
     initial::T1;
     space_step_num::Int = 31,
     total_space::T2 = 1.0,
+    boundary::Bool = false,
     kw...,
 ) where {T1<:Function,T2<:Number}
-    return initial.(range(0.0, total_space, space_step_num + 2)[2:end-1])
+    xs = range(0.0, total_space, space_step_num + 2)
+    if !boundary
+        xs = xs[2:end-1]
+    end
+    return initial.(xs)
 end
 
 function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len; kw...) where {T<:Number}
