@@ -130,4 +130,6 @@ include("HeatEquation.jl")
 
 include("ConvectionDiffusionEquation.jl")
 
+include("FiniteElementMethod.jl")
+
 end

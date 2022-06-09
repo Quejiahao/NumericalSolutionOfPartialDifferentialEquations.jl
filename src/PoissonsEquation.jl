@@ -88,12 +88,14 @@ function solve_poissions_equation(
     f::T1,
     bound_func::Vector{T2},
     len::Int,
-    wid::Int = len;
+    wid::Int = len,
+    scheme::Symbol = :FDM;
     kw...,
 ) where {T1<:Function,T2<:Function}
     return solve_poissions_equation(
         construct_grid(f, len, wid),
-        construct_boundary(bound_func, len, wid);
+        construct_boundary(bound_func, len, wid),
+        scheme;
         kw...,
     )
 end
@@ -102,20 +104,27 @@ function solve_poissions_equation(
     f::Vector{T1},
     bound_func::Vector{T2},
     len::Int,
-    wid::Int = len;
+    wid::Int = len,
+    scheme::Symbol = :FDM;
     kw...,
 ) where {T1<:Number,T2<:Function}
-    return solve_poissions_equation(f, construct_boundary(bound_func, len, wid); kw...)
+    return solve_poissions_equation(
+        f,
+        construct_boundary(bound_func, len, wid),
+        scheme;
+        kw...,
+    )
 end
 
 function solve_poissions_equation(
     f::T1,
     boundary::Vector{Vector{T2}},
     len::Int,
-    wid::Int = len;
+    wid::Int = len,
+    scheme::Symbol = :FDM;
     kw...,
 ) where {T1<:Function,T2<:Number}
-    return solve_poissions_equation(construct_grid(f, len, wid), boundary; kw...)
+    return solve_poissions_equation(construct_grid(f, len, wid), boundary, scheme; kw...)
 end
 
 """
