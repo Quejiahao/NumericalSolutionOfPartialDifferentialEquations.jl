@@ -96,6 +96,7 @@ function solve_poissions_equation(
         construct_grid(f, len, wid),
         construct_boundary(bound_func, len, wid),
         scheme;
+        fun = f,
         kw...,
     )
 end
@@ -124,7 +125,13 @@ function solve_poissions_equation(
     scheme::Symbol = :FDM;
     kw...,
 ) where {T1<:Function,T2<:Number}
-    return solve_poissions_equation(construct_grid(f, len, wid), boundary, scheme; kw...)
+    return solve_poissions_equation(
+        construct_grid(f, len, wid),
+        boundary,
+        scheme;
+        fun = f,
+        kw...,
+    )
 end
 
 """
