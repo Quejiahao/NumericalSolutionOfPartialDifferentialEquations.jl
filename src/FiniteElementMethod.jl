@@ -1,3 +1,9 @@
+Base.@kwdef mutable struct TriangleGrid{T<:Number}
+    Tes_index::Array{Int,2}
+    A::Array{T,2}
+    fval::Array{T,1}
+end
+
 function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
     grid_point_x = repeat([range(0.0, 1.0, wid + 2);], wid + 2)
     grid_point_y = repeat([range(0.0, 1.0, len + 2);], inner = len + 2)
@@ -5,12 +11,9 @@ function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
     # _grid_point_index = div.(4 : (2 * (wid + 1) * (len + 1) + 3), 2)
     _grid_point_index =
         repeat(deleteat!([1:((wid+2)*(len+1));], 1:(wid+2):((wid+2)*(len+1))), inner = 2)
-    T = [_grid_point_index _grid_point_index .+ (wid + 1) _grid_point_index .- 1]
-    T[2:2:end, 3] .+= (wid + 3)
-    return Dict(
-        :fval => fval,
-        :T => T,
-    )
+    Tes_index = [_grid_point_index _grid_point_index .+ (wid + 1) _grid_point_index .- 1]
+    Tes_index[2:2:end, 3] .+= (wid + 3)
+    return TriangleGrid(fval = fval, Tes_index = Tes_index, A = [grid_point_x grid_point_y])
 end
 
 @doc raw"""
@@ -40,10 +43,6 @@ function construct_element_stiffness_matrix(
         nabla_lambdas_hat_x_mul_A_e_star * transpose(nabla_lambdas_hat_x_mul_A_e_star) ./
         det_Ae_2,
     )
-end
-
-function construct_stiffness_matrix()
-
 end
 
 function _fval_element_load_vector(
@@ -78,8 +77,16 @@ function construct_element_load_vector(
     end
 end
 
-function construct_load_vector()
+function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
+    Tes_num = size(triangle_grid.Tes_index, 1)
+    grid_point_num = size(triangle_grid.X, 1)
 
+    for e = 1:Tes_num
+        Te_index = triangle_grid.Tes_index[e, :]
+        Ae = triangle_grid.A[Te_index, :]
+        fvale = triangle_grid.fval[Te_index]
+    end
+    # Kes = sparse([],[],[],4, 4);
 end
 
 function solve_poissions_equation_FEM(
@@ -87,11 +94,14 @@ function solve_poissions_equation_FEM(
     # boundary::Vector{Vector{T2}}  zero boundary
     ;
     solver::Function = \,
+    len::Int = 31,
+    wid::Int = len,
     kw...,
 ) where {T1<:Number,T2<:Number}
     # calc A_e
-    sti_mat = construct_stiffness_matrix()
-    loa_mat = construct_load_vector()
+    triangle_grid = construct_triangle_grid(f, len, wid)
+    # sti_mat = construct_stiffness_matrix(triangle_grid)
+    # loa_mat = construct_load_vector()
     return solver(sti_mat, loa_mat)
 end
 

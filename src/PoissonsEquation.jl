@@ -130,6 +130,8 @@ function solve_poissions_equation(
         boundary,
         scheme;
         fun = f,
+        len = len,
+        wid = wid,
         kw...,
     )
 end
