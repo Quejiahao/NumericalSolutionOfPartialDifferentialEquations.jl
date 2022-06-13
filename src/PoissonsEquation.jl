@@ -97,6 +97,8 @@ function solve_poissions_equation(
         construct_boundary(bound_func, len, wid),
         scheme;
         fun = f,
+        len = len,
+        wid = wid,
         kw...,
     )
 end

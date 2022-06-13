@@ -3,12 +3,15 @@ module NumericalSolutionOfPartialDifferentialEquations
 export construct_laplacian,
     conjugate_gradient_inverse_divide,
     solve_poissions_equation,
+    solve_poissions_equation_FEM,
     test_solve_poissions_equation_known,
     test_solve_poissions_equation_unknown,
     test_solve_heat_equation,
+    test_solve_poissions_equation_FEM,
     homework1,
     homework2,
-    homework3
+    homework3,
+    homework4
 
 if haskey(ENV, "NOMKL") && ENV["NOMKL"] === "1"
     @info "Do not use MKL, using default BLAS"

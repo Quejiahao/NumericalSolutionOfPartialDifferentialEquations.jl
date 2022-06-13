@@ -2,6 +2,9 @@ Base.@kwdef mutable struct TriangleGrid{T<:Number}
     Tes_index::Array{Int,2}
     A::Array{T,2}
     fval::Array{T,1}
+    isnot_boundary::Array{Bool,1}
+    # len::Int
+    # wid::Int = len
 end
 
 function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
@@ -10,10 +13,26 @@ function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
     fval = f.(grid_point_x, grid_point_y)
     # _grid_point_index = div.(4 : (2 * (wid + 1) * (len + 1) + 3), 2)
     _grid_point_index =
-        repeat(deleteat!([1:((wid+2)*(len+1));], 1:(wid+2):((wid+2)*(len+1))), inner = 2)
-    Tes_index = [_grid_point_index _grid_point_index .+ (wid + 1) _grid_point_index .- 1]
-    Tes_index[2:2:end, 3] .+= (wid + 3)
-    return TriangleGrid(fval = fval, Tes_index = Tes_index, A = [grid_point_x grid_point_y])
+        transpose(deleteat!([1:((wid+2)*(len+1));], 1:(wid+2):((wid+2)*(len+1))))
+    Tes_index = [
+        _grid_point_index.-1 _grid_point_index
+        _grid_point_index _grid_point_index.+(wid+1)
+        _grid_point_index.+(wid+1) _grid_point_index.+(wid+2)
+    ]
+    isnot_boundary = [zeros(Bool, wid + 2) [
+        zeros(Bool, 1, len)
+        ones(Bool, wid, len)
+        zeros(Bool, 1, len)
+    ] zeros(Bool, wid + 2)][:]
+    return TriangleGrid(
+        fval = fval,
+        Tes_index = Tes_index,
+        A = [
+            transpose(grid_point_x)
+            transpose(grid_point_y)
+        ],
+        isnot_boundary = isnot_boundary,
+    )
 end
 
 @doc raw"""
@@ -22,33 +41,36 @@ $$A^e = \begin{pmatrix}
     x_2^1 & x_2^2 & x_2^3
 \end{pmatrix}$$
 """
-function construct_element_stiffness_matrix(
+function construct_element_stiffness_matrix_with_abs_det_A_e_2(
     Ae::Array{T,2};
-    isnot_boundary = [true; true; true],
+    isnot_boundarye = [true; true; true],
     A_e::Array{T,2} = Ae[:, 2:3] .- Ae[:, 1],
 ) where {T<:Number}
     nabla_lambdas_hat_x = [
         -1.0 -1.0
         1.0 0.0
         0.0 1.0
-    ] .* isnot_boundary
+    ] .* isnot_boundarye
 
-    det_Ae_2 = det(A_e) * 2.0
+    abs_det_A_e_2 = abs(det(A_e)) * 2.0
     A_e_star = [
         A_e[2, 2] -A_e[1, 2]
         -A_e[2, 1] A_e[1, 1]
     ]
     nabla_lambdas_hat_x_mul_A_e_star = nabla_lambdas_hat_x * A_e_star
-    return Symmetric(
+    Ke =
         nabla_lambdas_hat_x_mul_A_e_star * transpose(nabla_lambdas_hat_x_mul_A_e_star) ./
-        det_Ae_2,
-    )
+        abs_det_A_e_2
+    return Ke, abs_det_A_e_2
+end
+
+function construct_element_stiffness_matrix(Ae::Array{T,2}; kw...) where {T<:Number}
+    return construct_element_stiffness_matrix_with_abs_det_A_e_2(Ae; kw...)[1]
 end
 
 function _fval_element_load_vector(
     Ae::Array{T,2},
     f::Function,
-    isnot_boundary = [true; true; true],
     integral_method::Symbol = :piecewise_linear,
 ) where {T<:Number}
     if integral_method == :piecewise_linear
@@ -61,32 +83,62 @@ end
 function construct_element_load_vector(
     Ae::Array{T,2},
     f::Function;
-    isnot_boundary = [true; true; true],
+    isnot_boundarye = [true; true; true],
     integral_method::Symbol = :piecewise_linear,
-    A_e::Array{T,2} = Ae[:, 2:3] .- Ae[:, 1],
-    fval::Array{T,2} = _fval_element_load_vector(Ae, f, isnot_boundary, integral_method),
+    abs_det_A_e_2::T = abs(det(Ae[:, 2:3] .- Ae[:, 1])) * 2.0,
+    fvale::Array{T,1} = _fval_element_load_vector(Ae, f, integral_method),
 ) where {T<:Number}
     if integral_method == :piecewise_linear
-        return det(Ae) ./ 24 * [
+        return abs_det_A_e_2 ./ 12 .* [
             2 1 1
             1 2 1
             1 1 2
-        ] * fval
+        ] .* isnot_boundarye .* transpose(isnot_boundarye) * fvale
     else
         error("Unknown integral method: ", integral_method)
     end
 end
 
 function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
-    Tes_num = size(triangle_grid.Tes_index, 1)
-    grid_point_num = size(triangle_grid.X, 1)
+    Tes_num = size(triangle_grid.Tes_index, 2)
+    Vs_type = typeof(triangle_grid.fval[1])
+    Is, Js, K_Vs, f_Vs = Int[], Int[], Vs_type[], Vs_type[]
 
     for e = 1:Tes_num
-        Te_index = triangle_grid.Tes_index[e, :]
-        Ae = triangle_grid.A[Te_index, :]
+        Te_index = triangle_grid.Tes_index[:, e]
+        Ae = triangle_grid.A[:, Te_index]
         fvale = triangle_grid.fval[Te_index]
+        isnot_boundarye = triangle_grid.isnot_boundary[Te_index]
+        Ke, abs_det_A_e_2 = construct_element_stiffness_matrix_with_abs_det_A_e_2(
+            Ae;
+            isnot_boundarye = isnot_boundarye,
+        )
+        fe = construct_element_load_vector(
+            Ae,
+            identity;
+            isnot_boundarye = isnot_boundarye,
+            abs_det_A_e_2 = abs_det_A_e_2,
+            fvale = fvale,
+        )
+        _e_index_i = [1, 1, 2, 1, 2, 3]
+        _e_index_j = [1, 2, 2, 3, 3, 3]
+        append!(Is, Te_index[_e_index_i])
+        append!(Js, Te_index[_e_index_j])
+        append!(K_Vs, [Ke[_e_index_i[k], _e_index_j[k]] for k = 1:6])
+
+        append!(f_Vs, fe)
     end
-    # Kes = sparse([],[],[],4, 4);
+
+    grid_point_num = size(triangle_grid.A, 2)
+    K = Symmetric(sparse(Is, Js, K_Vs, grid_point_num, grid_point_num))
+    f = Array(sparsevec(triangle_grid.Tes_index[:], f_Vs, grid_point_num))
+
+    return K, f
+end
+
+function delete_zero_boundary(K, f, triangle_grid::TriangleGrid)
+    return K[triangle_grid.isnot_boundary, triangle_grid.isnot_boundary],
+    f[triangle_grid.isnot_boundary]
 end
 
 function solve_poissions_equation_FEM(
@@ -97,12 +149,11 @@ function solve_poissions_equation_FEM(
     len::Int = 31,
     wid::Int = len,
     kw...,
-) where {T1<:Number,T2<:Number}
-    # calc A_e
+)
     triangle_grid = construct_triangle_grid(f, len, wid)
-    # sti_mat = construct_stiffness_matrix(triangle_grid)
-    # loa_mat = construct_load_vector()
-    return solver(sti_mat, loa_mat)
+    K, f = construct_stiffness_matrix_and_load_vector(triangle_grid)
+    K, f = delete_zero_boundary(K, f, triangle_grid)
+    return solver(K, f)
 end
 
 function solve_poissions_equation(
@@ -118,4 +169,19 @@ function solve_poissions_equation(
     elseif scheme === :FEM
         return solve_poissions_equation_FEM(fun; solver = solver, kw...)
     end
+end
+
+function test_solve_poissions_equation_FEM(;
+    size = 3,
+    plotgui = false,
+    f = (x, y) -> sinc(4 * x * y),
+    bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],  # this argument is useless
+    # u = ,
+    kw...,
+)
+    return solve_poissions_equation(f, bound_func, size, size, :FEM; kw...)
+end
+
+function homework4()
+    return test_solve_poissions_equation_FEM()
 end
