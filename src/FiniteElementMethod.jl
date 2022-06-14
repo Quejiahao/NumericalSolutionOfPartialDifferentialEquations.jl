@@ -89,7 +89,7 @@ function construct_element_load_vector(
     fvale::Array{T,1} = _fval_element_load_vector(Ae, f, integral_method),
 ) where {T<:Number}
     if integral_method == :piecewise_linear
-        return abs_det_A_e_2 ./ 12 .* [
+        return abs_det_A_e_2 ./ 48 .* [
             2 1 1
             1 2 1
             1 1 2
@@ -100,9 +100,14 @@ function construct_element_load_vector(
 end
 
 function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
+    _e_index_i = repeat(1:3, 3) #[1, 1, 2, 1, 2, 3]
+    _e_index_j = repeat(1:3, inner = 3) #[1, 2, 2, 3, 3, 3]
     Tes_num = size(triangle_grid.Tes_index, 2)
     Vs_type = typeof(triangle_grid.fval[1])
-    Is, Js, K_Vs, f_Vs = Int[], Int[], Vs_type[], Vs_type[]
+    Is = zeros(Int, length(_e_index_i), Tes_num)
+    Js = zeros(Int, length(_e_index_j), Tes_num)
+    K_Vs = zeros(Vs_type, length(_e_index_i), Tes_num)
+    f_Vs = zeros(Vs_type, 3, Tes_num)
 
     for e = 1:Tes_num
         Te_index = triangle_grid.Tes_index[:, e]
@@ -120,18 +125,16 @@ function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
             abs_det_A_e_2 = abs_det_A_e_2,
             fvale = fvale,
         )
-        _e_index_i = [1, 1, 2, 1, 2, 3]
-        _e_index_j = [1, 2, 2, 3, 3, 3]
-        append!(Is, Te_index[_e_index_i])
-        append!(Js, Te_index[_e_index_j])
-        append!(K_Vs, [Ke[_e_index_i[k], _e_index_j[k]] for k = 1:6])
 
-        append!(f_Vs, fe)
+        Is[:, e] = Te_index[_e_index_i]
+        Js[:, e] = Te_index[_e_index_j]
+        K_Vs[:, e] = Ke[:] # [Ke[_e_index_i[k], _e_index_j[k]] for k = 1:length(_e_index_i)]
+        f_Vs[:, e] = fe
     end
 
     grid_point_num = size(triangle_grid.A, 2)
-    K = Symmetric(sparse(Is, Js, K_Vs, grid_point_num, grid_point_num))
-    f = Array(sparsevec(triangle_grid.Tes_index[:], f_Vs, grid_point_num))
+    K = sparse(Is[:], Js[:], K_Vs[:], grid_point_num, grid_point_num)
+    f = Array(sparsevec(triangle_grid.Tes_index[:], f_Vs[:], grid_point_num))
 
     return K, f
 end
@@ -152,7 +155,7 @@ function solve_poissions_equation_FEM(
 )
     triangle_grid = construct_triangle_grid(f, len, wid)
     K, f = construct_stiffness_matrix_and_load_vector(triangle_grid)
-    K, f = delete_zero_boundary(K, f, triangle_grid)
+    @show K, f = delete_zero_boundary(K, f, triangle_grid)
     return solver(K, f)
 end
 
@@ -174,14 +177,20 @@ end
 function test_solve_poissions_equation_FEM(;
     size = 3,
     plotgui = false,
-    f = (x, y) -> sinc(4 * x * y),
+    f = (x, y) -> -2 * pi ^ 2 * sin(pi * x) * sin(pi * y),
+    # f = (x, y) -> -2.0 * (x ^ 2 + y ^ 2 - x - y),
     bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],  # this argument is useless
-    # u = ,
+    u = (x, y) -> sin(pi * x) * sin(pi * y),
+    # u = (x, y) -> x * (x - 1) * y * (y - 1),
     kw...,
 )
-    return solve_poissions_equation(f, bound_func, size, size, :FEM; kw...)
+    U = solve_poissions_equation(f, bound_func, size, size, :FEM; kw...)
+    grid_point_x = repeat([range(0.0, 1.0, size + 2);][2:end-1], size)
+    grid_point_y = repeat([range(0.0, 1.0, size + 2);][2:end-1], inner = size)
+    U_true = u.(grid_point_x, grid_point_y)[:]
+    return U, U_true, grid_point_x, grid_point_y
 end
 
-function homework4()
-    return test_solve_poissions_equation_FEM()
+function homework4(; kw...)
+    return test_solve_poissions_equation_FEM(; kw...)
 end
