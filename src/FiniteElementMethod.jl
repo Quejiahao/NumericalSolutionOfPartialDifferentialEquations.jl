@@ -7,9 +7,26 @@ Base.@kwdef mutable struct TriangleGrid{T<:Number}
     # wid::Int = len
 end
 
+function construct_grid_point_FEM(len::Int, wid::Int = len)
+    return repeat([range(0.0, 1.0, wid + 2);], wid + 2),
+    repeat([range(0.0, 1.0, len + 2);], inner = len + 2)
+end
+
+function construct_grid_FEM(f::Function, len::Int, wid::Int = len)
+    grid_point_x, grid_point_y = construct_grid_point_FEM(len, wid)
+    return f.(grid_point_x, grid_point_y)[_isnot_boundary(len, wid)]
+end
+
+function _isnot_boundary(len::Int, wid::Int = len)
+    return [zeros(Bool, wid + 2) [
+        zeros(Bool, 1, len)
+        ones(Bool, wid, len)
+        zeros(Bool, 1, len)
+    ] zeros(Bool, wid + 2)][:]
+end
+
 function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
-    grid_point_x = repeat([range(0.0, 1.0, wid + 2);], wid + 2)
-    grid_point_y = repeat([range(0.0, 1.0, len + 2);], inner = len + 2)
+    grid_point_x, grid_point_y = construct_grid_point_FEM(len, wid)
     fval = f.(grid_point_x, grid_point_y)
     # _grid_point_index = div.(4 : (2 * (wid + 1) * (len + 1) + 3), 2)
     _grid_point_index =
@@ -19,11 +36,7 @@ function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
         _grid_point_index _grid_point_index.+(wid+1)
         _grid_point_index.+(wid+1) _grid_point_index.+(wid+2)
     ]
-    isnot_boundary = [zeros(Bool, wid + 2) [
-        zeros(Bool, 1, len)
-        ones(Bool, wid, len)
-        zeros(Bool, 1, len)
-    ] zeros(Bool, wid + 2)][:]
+    isnot_boundary = _isnot_boundary(len, wid)
     return TriangleGrid(
         fval = fval,
         Tes_index = Tes_index,
@@ -133,7 +146,7 @@ function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
     end
 
     grid_point_num = size(triangle_grid.A, 2)
-    K = sparse(Is[:], Js[:], K_Vs[:], grid_point_num, grid_point_num)
+    K = dropzeros(sparse(Is[:], Js[:], K_Vs[:], grid_point_num, grid_point_num))
     f = Array(sparsevec(triangle_grid.Tes_index[:], f_Vs[:], grid_point_num))
 
     return K, f
@@ -154,9 +167,9 @@ function solve_poissions_equation_FEM(
     kw...,
 )
     triangle_grid = construct_triangle_grid(f, len, wid)
-    K, f = construct_stiffness_matrix_and_load_vector(triangle_grid)
-    @show K, f = delete_zero_boundary(K, f, triangle_grid)
-    return solver(K, f)
+    K, load_vector = construct_stiffness_matrix_and_load_vector(triangle_grid)
+    K, load_vector = delete_zero_boundary(K, load_vector, triangle_grid)
+    return solver(K, load_vector)
 end
 
 function solve_poissions_equation(
@@ -170,27 +183,22 @@ function solve_poissions_equation(
     if scheme === :FDM
         return solve_poissions_equation(f, boundary; solver = solver, kw...)
     elseif scheme === :FEM
+        # only zeros boundary for FEM, may add boundary later
         return solve_poissions_equation_FEM(fun; solver = solver, kw...)
     end
 end
 
-function test_solve_poissions_equation_FEM(;
-    size = 3,
-    plotgui = false,
-    f = (x, y) -> -2 * pi ^ 2 * sin(pi * x) * sin(pi * y),
-    # f = (x, y) -> -2.0 * (x ^ 2 + y ^ 2 - x - y),
-    bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],  # this argument is useless
-    u = (x, y) -> sin(pi * x) * sin(pi * y),
-    # u = (x, y) -> x * (x - 1) * y * (y - 1),
-    kw...,
-)
-    U = solve_poissions_equation(f, bound_func, size, size, :FEM; kw...)
-    grid_point_x = repeat([range(0.0, 1.0, size + 2);][2:end-1], size)
-    grid_point_y = repeat([range(0.0, 1.0, size + 2);][2:end-1], inner = size)
-    U_true = u.(grid_point_x, grid_point_y)[:]
-    return U, U_true, grid_point_x, grid_point_y
-end
-
-function homework4(; kw...)
-    return test_solve_poissions_equation_FEM(; kw...)
+function homework4(; max_log2_size = 14, kw...)
+    err = zeros(max_log2_size)
+    for i = 1:max_log2_size
+        err[i] = test_solve_poissions_equation_known(;
+            scheme = :FEM,
+            size = 2^i - 1,
+            bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],  # this argument is currently useless for FEM, only zero boundary is supported
+            f = (x, y) -> -2.0 * (x^2 + y^2 - x - y),
+            u = (x, y) -> x * (x - 1) * y * (y - 1),
+            kw...,
+        )
+    end
+    return err
 end

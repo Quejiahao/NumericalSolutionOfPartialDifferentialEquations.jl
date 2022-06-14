@@ -60,8 +60,18 @@ end
 
 Use `f` to construct grid.
 """
-function construct_grid(f::T, len::Int, wid::Int = len) where {T<:Function}
-    return f.(range(0.0, 1.0, wid + 2)[2:end-1]', range(1.0, 0.0, len + 2)[2:end-1])[:]
+function construct_grid(
+    f::T,
+    len::Int,
+    wid::Int = len;
+    scheme = :FDM,
+    kw...,
+) where {T<:Function}
+    if scheme === :FEM
+        return construct_grid_FEM(f, len, wid)
+    else
+        return f.(range(0.0, 1.0, wid + 2)[2:end-1]', range(1.0, 0.0, len + 2)[2:end-1])[:]
+    end
 end
 
 """
@@ -88,8 +98,8 @@ function solve_poissions_equation(
     f::T1,
     bound_func::Vector{T2},
     len::Int,
-    wid::Int = len,
-    scheme::Symbol = :FDM;
+    wid::Int = len;
+    scheme::Symbol = :FDM,
     kw...,
 ) where {T1<:Function,T2<:Function}
     return solve_poissions_equation(
@@ -107,8 +117,8 @@ function solve_poissions_equation(
     f::Vector{T1},
     bound_func::Vector{T2},
     len::Int,
-    wid::Int = len,
-    scheme::Symbol = :FDM;
+    wid::Int = len;
+    scheme::Symbol = :FDM,
     kw...,
 ) where {T1<:Number,T2<:Function}
     return solve_poissions_equation(
@@ -123,8 +133,8 @@ function solve_poissions_equation(
     f::T1,
     boundary::Vector{Vector{T2}},
     len::Int,
-    wid::Int = len,
-    scheme::Symbol = :FDM;
+    wid::Int = len;
+    scheme::Symbol = :FDM,
     kw...,
 ) where {T1<:Function,T2<:Number}
     return solve_poissions_equation(
@@ -157,7 +167,7 @@ function test_solve_poissions_equation_known(;
 )
     U = solve_poissions_equation(f, bound_func, size; kw...)
     plotgui && plot_2d_solution(U, size; kw...)
-    return norm(U - construct_grid(u, size), Inf)
+    return norm(U - construct_grid(u, size; kw...), Inf)
 end
 
 """
