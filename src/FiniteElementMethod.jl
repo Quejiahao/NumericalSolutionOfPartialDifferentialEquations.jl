@@ -3,6 +3,7 @@ Base.@kwdef mutable struct TriangleGrid{T<:Number}
     A::Array{T,2}
     fval::Array{T,1}
     isnot_boundary::Array{Bool,1}
+    f::Function
     # len::Int
     # wid::Int = len
 end
@@ -45,6 +46,7 @@ function construct_triangle_grid(f::Function, len::Int, wid::Int = len)
             transpose(grid_point_y)
         ],
         isnot_boundary = isnot_boundary,
+        f = f,
     )
 end
 
@@ -86,7 +88,7 @@ function _fval_element_load_vector(
     f::Function,
     integral_method::Symbol = :piecewise_linear,
 ) where {T<:Number}
-    if integral_method == :piecewise_linear
+    if integral_method === :piecewise_linear
         return [f(Ae[:, i]...) for i = 1:size(Ae, 2)]
     else
         error("Unknown integral method: ", integral_method)
@@ -101,18 +103,29 @@ function construct_element_load_vector(
     abs_det_A_e_2::T = abs(det(Ae[:, 2:3] .- Ae[:, 1])) * 2.0,
     fvale::Array{T,1} = _fval_element_load_vector(Ae, f, integral_method),
 ) where {T<:Number}
-    if integral_method == :piecewise_linear
+    if integral_method === :piecewise_linear
         return abs_det_A_e_2 ./ 48 .* [
             2 1 1
             1 2 1
             1 1 2
         ] .* isnot_boundarye .* transpose(isnot_boundarye) * fvale
+    elseif integral_method === :HCubature    #   I do not know what is this package algorithm
+        return abs_det_A_e_2 ./ 2 .* hcubature(
+            x ->
+                f((1 - x[2]) * x[1], x[2]) * (1 - x[2]) .* [
+                    1 - x[1] - x[2]
+                    x[1]
+                    x[2]
+                ] .* isnot_boundarye,
+            [0.0, 0.0],
+            [1.0, 1.0],
+        )[1]
     else
         error("Unknown integral method: ", integral_method)
     end
 end
 
-function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
+function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid; kw...)
     _e_index_i = repeat(1:3, 3) #[1, 1, 2, 1, 2, 3]
     _e_index_j = repeat(1:3, inner = 3) #[1, 2, 2, 3, 3, 3]
     Tes_num = size(triangle_grid.Tes_index, 2)
@@ -133,10 +146,11 @@ function construct_stiffness_matrix_and_load_vector(triangle_grid::TriangleGrid)
         )
         fe = construct_element_load_vector(
             Ae,
-            identity;
+            triangle_grid.f;
             isnot_boundarye = isnot_boundarye,
             abs_det_A_e_2 = abs_det_A_e_2,
             fvale = fvale,
+            kw...,
         )
 
         Is[:, e] = Te_index[_e_index_i]
@@ -167,7 +181,7 @@ function solve_poissions_equation_FEM(
     kw...,
 )
     triangle_grid = construct_triangle_grid(f, len, wid)
-    K, load_vector = construct_stiffness_matrix_and_load_vector(triangle_grid)
+    K, load_vector = construct_stiffness_matrix_and_load_vector(triangle_grid; kw...)
     K, load_vector = delete_zero_boundary(K, load_vector, triangle_grid)
     return solver(K, load_vector)
 end
@@ -197,6 +211,9 @@ function homework4(; max_log2_size = 14, kw...)
             bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],  # this argument is currently useless for FEM, only zero boundary is supported
             f = (x, y) -> -2.0 * (x^2 + y^2 - x - y),
             u = (x, y) -> x * (x - 1) * y * (y - 1),
+            # f = (x, y) -> 2 * pi^2 * sin(pi * x) * sin(pi * y),
+            # u = (x, y) -> sin(pi * x) * sin(pi * y),
+            norm_p = 2,
             kw...,
         )
     end

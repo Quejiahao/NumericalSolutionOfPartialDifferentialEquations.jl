@@ -163,11 +163,12 @@ function test_solve_poissions_equation_known(;
     ],
     f = (x, y) -> (pi^2 - 1) * exp(x) * sin(pi * y),
     u = (x, y) -> exp(x) * sin(pi * y),
+    norm_p = Inf,
     kw...,
 )
     U = solve_poissions_equation(f, bound_func, size; kw...)
     plotgui && plot_2d_solution(U, size; kw...)
-    return norm(U - construct_grid(u, size; kw...), Inf)
+    return norm(U - construct_grid(u, size; kw...), norm_p)
 end
 
 """

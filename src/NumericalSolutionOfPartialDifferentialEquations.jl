@@ -28,6 +28,7 @@ end
 using LinearAlgebra
 using SparseArrays
 using Optim
+using HCubature
 
 import Base: *, \
 
@@ -110,14 +111,14 @@ function construct_initial(
 end
 
 function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len; scheme = :FDM, kw...) where {T<:Number}
-    if scheme === :FEM
-        x_grid, y_grid = construct_grid_point_FEM(len, wid)
-    else
+    # if scheme === :FEM
+    #     x_grid, y_grid = construct_grid_point_FEM(len, wid)
+    # else
         xs = range(0.0, 1.0, wid + 2)[2:end-1]
         ys = range(1.0, 0.0, len + 2)[2:end-1]
         x_grid = [x for x in xs for y in ys]
         y_grid = [y for x in xs for y in ys]
-    end
+    # end
     @eval (@__MODULE__) begin
         using Plots
         theme(:orange)
