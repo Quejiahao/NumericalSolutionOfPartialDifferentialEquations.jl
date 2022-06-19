@@ -195,25 +195,36 @@ function solve_poissions_equation(
     kw...,
 ) where {T1<:Number,T2<:Number}
     if scheme === :FDM
+        @info "Use FDM scheme"
         return solve_poissions_equation(f, boundary; solver = solver, kw...)
     elseif scheme === :FEM
         # only zeros boundary for FEM, may add boundary later
+        @info "Use FEM scheme"
         return solve_poissions_equation_FEM(fun; solver = solver, kw...)
+    else
+        error("Unknown scheme: ", scheme)
     end
 end
 
-function homework4(; max_log2_size = 14, kw...)
+function homework4(;
+    max_log2_size = 11,
+    scheme = :FEM,
+    f = (x, y) -> -2.0 * (x^2 + y^2 - x - y),
+    u = (x, y) -> x * (x - 1) * y * (y - 1),
+    # f = (x, y) -> 2 * pi^2 * sin(pi * x) * sin(pi * y),
+    # u = (x, y) -> sin(pi * x) * sin(pi * y),
+    norm_p = Inf,
+    kw...,
+)
     err = zeros(max_log2_size)
     for i = 1:max_log2_size
         err[i] = test_solve_poissions_equation_known(;
-            scheme = :FEM,
+            scheme = scheme,
             size = 2^i - 1,
             bound_func = [(x, y) -> 0, (x, y) -> 0, (x, y) -> 0, (x, y) -> 0],  # this argument is currently useless for FEM, only zero boundary is supported
-            f = (x, y) -> -2.0 * (x^2 + y^2 - x - y),
-            u = (x, y) -> x * (x - 1) * y * (y - 1),
-            # f = (x, y) -> 2 * pi^2 * sin(pi * x) * sin(pi * y),
-            # u = (x, y) -> sin(pi * x) * sin(pi * y),
-            norm_p = 2,
+            f = f,
+            u = u,
+            norm_p = norm_p,
             kw...,
         )
     end

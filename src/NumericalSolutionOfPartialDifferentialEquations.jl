@@ -110,14 +110,20 @@ function construct_initial(
     return initial.(xs)
 end
 
-function plot_2d_solution(U::Vector{T}, len::Int, wid::Int = len; scheme = :FDM, kw...) where {T<:Number}
+function plot_2d_solution(
+    U::Vector{T},
+    len::Int,
+    wid::Int = len;
+    scheme = :FDM,
+    kw...,
+) where {T<:Number}
     # if scheme === :FEM
     #     x_grid, y_grid = construct_grid_point_FEM(len, wid)
     # else
-        xs = range(0.0, 1.0, wid + 2)[2:end-1]
-        ys = range(1.0, 0.0, len + 2)[2:end-1]
-        x_grid = [x for x in xs for y in ys]
-        y_grid = [y for x in xs for y in ys]
+    xs = range(0.0, 1.0, wid + 2)[2:end-1]
+    ys = range(1.0, 0.0, len + 2)[2:end-1]
+    x_grid = [x for x in xs for y in ys]
+    y_grid = [y for x in xs for y in ys]
     # end
     @eval (@__MODULE__) begin
         using Plots
@@ -130,6 +136,14 @@ function conjugate_gradient_inverse_divide(A, b)
     f = x -> (x' * A / 2 - b') * x
     g! = (G, x) -> (G[:] = (A * x - b))
     return optimize(f, g!, zeros(length(b)), ConjugateGradient()).minimizer
+end
+
+function norm_for_grid(f::Vector{T}, p::Real, len::Int, wid::Int = len) where {T<:Number}
+    if p === Inf
+        return norm(f, Inf)
+    else
+        return sum(abs.(f) .^ p ./ ((1 + len) * (1 + wid))) .^ (1 / p)
+    end
 end
 
 include("PoissonsEquation.jl")

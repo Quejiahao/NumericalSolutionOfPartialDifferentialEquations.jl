@@ -168,7 +168,7 @@ function test_solve_poissions_equation_known(;
 )
     U = solve_poissions_equation(f, bound_func, size; kw...)
     plotgui && plot_2d_solution(U, size; kw...)
-    return norm(U - construct_grid(u, size; kw...), norm_p)
+    return norm_for_grid(U - construct_grid(u, size; kw...), norm_p, size)
 end
 
 """
