@@ -228,5 +228,11 @@ function homework4(;
             kw...,
         )
     end
-    return err
+    h = string.("2^{", string.([-1:-1:-11;]), "}")
+    log2_err = log2.(err)
+    order = [
+        0
+        log2_err[1:(end-1)] - log2_err[2:end]
+    ]
+    return [h err order]
 end
