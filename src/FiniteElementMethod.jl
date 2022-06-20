@@ -214,6 +214,7 @@ function homework4(;
     # f = (x, y) -> 2 * pi^2 * sin(pi * x) * sin(pi * y),
     # u = (x, y) -> sin(pi * x) * sin(pi * y),
     norm_p = Inf,
+    norm_k = 0,
     kw...,
 )
     err = zeros(max_log2_size)
@@ -225,6 +226,7 @@ function homework4(;
             f = f,
             u = u,
             norm_p = norm_p,
+            norm_k = norm_k,
             kw...,
         )
     end

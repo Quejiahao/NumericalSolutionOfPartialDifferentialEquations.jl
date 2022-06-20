@@ -138,11 +138,24 @@ function conjugate_gradient_inverse_divide(A, b)
     return optimize(f, g!, zeros(length(b)), ConjugateGradient()).minimizer
 end
 
-function norm_for_grid(f::Vector{T}, p::Real, len::Int, wid::Int = len) where {T<:Number}
+"""
+I do not know how to write the version that `k` greater than 1.
+
+And I do not know if it is true when `k === 1`.
+"""
+function norm_for_grid(f::Vector{T}, p::Int, len::Int, k::Int = 0, wid::Int = len) where {T<:Number}
+    if k === 0
+        f_all = f
+    elseif k === 1
+        f = reshape(f, len, wid)
+        f_1 = f[2:end, :] - f[1:end-1, :]
+        f_2 = f[:, 2:end] - f[:, 1:end-1]
+        f_all = [f[:]; f_1[:]; f_2[:]]
+    end
     if p === Inf
-        return norm(f, Inf)
+        return norm(f_all, Inf)
     else
-        return sum(abs.(f) .^ p ./ ((1 + len) * (1 + wid))) .^ (1 / p)
+        return sum(abs.(f_all) .^ p ./ ((1 + len) * (1 + wid))) .^ (1 / p)
     end
 end
 
