@@ -143,7 +143,7 @@ I do not know how to write the version that `k` greater than 1.
 
 And I do not know if it is true when `k === 1`.
 """
-function norm_for_grid(f::Vector{T}, p::Int, len::Int, k::Int = 0, wid::Int = len) where {T<:Number}
+function norm_for_grid(f::Vector{T}, p::Real, len::Int, k::Int = 0, wid::Int = len) where {T<:Number}
     if k === 0
         f_all = f
     elseif k === 1
