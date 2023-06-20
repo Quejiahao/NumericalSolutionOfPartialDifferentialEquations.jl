@@ -855,9 +855,9 @@ $$\lb\begin{aligned}
 考虑 $\Omega := (0, X) \times (0, Y)$ 上的热传导方程的 Dirichlet 初边值问题:
 \begin{equation}\label{equ:2d_DirichletProblem}
 	\lb\begin{aligned}
-		u_t &= a\(u_{xx} + u_{yy}\),	&	(x, y) \in \Omega,&~t > 0,	\\
-		u(x, y, 0) &= u^0(x, y),	&	0 \leq x \leq 1,&	\\
-		u(x, y, t) &= 0,	&	&~t > 0.
+		u_t &= a\(u_{xx} + u_{yy}\),	&	(x, y) \in \Omega,	&~t > 0,	\\
+		u(x, y, 0) &= u^0(x, y),	&	(x, y) \in \ol\Omega,	&	\\
+		u(x, y, t) &= 0,	&	(x, y) \in \pa\Omega,	&~t > 0.
 	\end{aligned}\rd
 \end{equation}
 其中 $a > 0$ 是热扩散系数.
@@ -867,8 +867,8 @@ $$\lb\begin{aligned}
 与一维情形类似, 在 $\Omega\times \R_+$ 上引入网格. 任取正整数 $N_x$ 和 $N_y$, 采用均匀时空网格:
 \begin{align*}
 	h_x &= \D x = \dfrac{X}{N_x},& h_y &= \D y = \dfrac{Y}{N_y},& \D t = \tau,\\
-	x_j &= jh,& j &= 0, 1, \cdots, N_x,\\
-	y &= kh,& k &= 0, 1, \cdots, N_y,\\
+	x_j &= jh_x,& j &= 0, 1, \cdots, N_x,\\
+	y_k &= kh_y,& k &= 0, 1, \cdots, N_y,\\
 	t_m &= m\tau,& m &= 0, 1, \cdots,
 \end{align*}
 其网格节点集为
@@ -939,7 +939,7 @@ Crank-Nicolson
 引入截断误差算子
 $$T_{h, \tau} := \(\dfrac{\de_t}{\tau} - a\dfrac{\de_x^2}{h_x^2} - a\dfrac{\de_y^2}{h_y^2}\) - \(\dfrac{\pa}{\pa t} - a\dfrac{\pa^2}{\pa x^2} - a\dfrac{\pa^2}{\pa y^2}\).$$
 设 $u$ 充分光滑, 由其在 $(x_j, y_k, t_{m + \frac{1}{2}})$ 处 Taylor 展开知:
-$$T_{jk}^{m + \frac{1}{2}} = -\frac{1}{12}(u_{ttt})_{jk}^{m + \frac{1}{2}} - \frac{1}{12}a (u_{xxxx})_{jk}^{m + \frac{1}{2}} h_x^2 - \frac{1}{12}a (u_{yyyy})_{jk}^{m + \frac{1}{2}} h_y^2 + O(\tau^4 + h_x^{4} + h_y^4),$$
+$$T_{jk}^{m + \frac{1}{2}} = -\frac{1}{12}(u_{ttt})_{jk}^{m + \frac{1}{2}} \tau^2 - \frac{1}{12}a (u_{xxxx})_{jk}^{m + \frac{1}{2}} h_x^2 - \frac{1}{12}a (u_{yyyy})_{jk}^{m + \frac{1}{2}} h_y^2 + O(\tau^4 + h_x^{4} + h_y^4),$$
 故 $Tu(x, y, t) = O(\tau^2 + h_x^2 + h_y^2)$.
 
 \subsection{Crank-Nicolson 格式的稳定性, 收敛性分析}
@@ -947,7 +947,7 @@ $$T_{jk}^{m + \frac{1}{2}} = -\frac{1}{12}(u_{ttt})_{jk}^{m + \frac{1}{2}} - \fr
 令 $\mu_x = \dfrac{a\tau}{h_x^2}$, $\mu_y = \dfrac{a\tau}{h_y^2}$, 则差分格式可等价地写为:
 \begin{equation}\label{equ:2d_Dirichlet_CN_Scheme}
 	\begin{aligned}
-		(1 + \mu_x + 2\mu_y) U_{jk}^{m + 1} &= (1 - \mu_x - 2\mu_y)U_{jk}^{m} \\
+		(1 + \mu_x + \mu_y) U_{jk}^{m + 1} &= (1 - \mu_x - \mu_y)U_{jk}^{m} \\
 		&\quad + \frac{1}{2}\mu_x(U_{j + 1, k}^m + U_{j - 1, k}^m + U_{j + 1, k}^{m + 1} + U_{j - 1, k}^{m + 1}),\\
 		&\quad + \frac{1}{2}\mu_y(U_{j, k + 1}^m + U_{j, k - 1}^m + U_{j, k + 1}^{m + 1} + U_{j, k - 1}^{m + 1}),
 	\end{aligned}
@@ -955,7 +955,7 @@ $$T_{jk}^{m + \frac{1}{2}} = -\frac{1}{12}(u_{ttt})_{jk}^{m + \frac{1}{2}} - \fr
 故 $1 - \mu_x - \mu_y \geq 0$ 时,  即 $\mu_x + \mu_y \leq 1$ 时满足最大值原理， 于是 Crank-Nicolson 格式在 $\mu_x + \mu_y \leq 1$ 时 $\mathbb{L}^\infty$ 稳定且收敛.
 
 将 Fourier 波形 $U_{jk}^m = \lambda_\a^m \e^{\i(\a_x x_j + \a_y y_k)}$ 代入差分格式 \eqref{equ:2d_Dirichlet_CN_Scheme}, 其中
-$$\a_x = \dfrac{l\pi}{X},\quad \a_y = \dfrac{l\pi}{Y},\quad \a = (\a_x, \a_y),\quad l = 1, \cdots, N_x,$$
+$$\a_x = \dfrac{l_x\pi}{X},\quad \a_y = \dfrac{l_y\pi}{Y},\quad \a = (\a_x, \a_y),\quad l_x = 1, \cdots, N_x,\quad l_y = 1, \cdots, N_y,$$
 可得增长因子
 $$\lambda_\a = \frac{1 - 2\(\mu_x\sin^2\frac{\a_xh_x}{2} + \mu_y\sin^2\frac{\a_yh_y}{2}\)}{1 + 2\(\mu_x\sin^2\frac{\a_xh_x}{2} + \mu_y\sin^2\frac{\a_yh_y}{2}\)},$$
 即 $|\lambda_\a| \leq 1$ 对任意 $\a$ 成立, 即 Crank-Nicolson 格式无条件 $\mathbb{L}^2$ 稳定且收敛.
