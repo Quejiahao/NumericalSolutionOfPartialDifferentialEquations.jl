@@ -313,7 +313,7 @@ function homework3(; nu = 0.5, i_max = 10, kw...)
     for scheme in test_schemes
         l_infty_err = [
             norm(results[i][1][scheme] - results[i][1][:true_solution], Inf) for
-            i = 1:length(results)
+            i = eachindex(results)
         ]
         l_infty_err_log2 = log2.(l_infty_err)
         l_infty_order = [0; l_infty_err_log2[1:end-1] - l_infty_err_log2[2:end]]
@@ -321,7 +321,7 @@ function homework3(; nu = 0.5, i_max = 10, kw...)
             norm(
                 norm.(eachcol(results[i][1][scheme] - results[i][1][:true_solution]),),
                 Inf,
-            ) / sqrt(2^(i + 3)) for i = 1:length(results)
+            ) / sqrt(2^(i + 3)) for i = eachindex(results)
         ]
         l_2_err_log2 = log2.(l_2_err)
         l_2_order = [0; l_2_err_log2[1:end-1] - l_2_err_log2[2:end]]

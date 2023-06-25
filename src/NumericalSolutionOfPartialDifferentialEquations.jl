@@ -11,7 +11,9 @@ export construct_laplacian,
     homework1,
     homework2,
     homework3,
-    homework4
+    homework4,
+    homework5,
+    homework6
 
 if haskey(ENV, "NOMKL") && ENV["NOMKL"] === "1"
     @info "Do not use MKL, using default BLAS"
@@ -141,16 +143,33 @@ end
 """
 I do not know how to write the version that `k` greater than 1.
 
-And I do not know if it is true when `k === 1`.
+is_norm: norm or seminorm
 """
-function norm_for_grid(f::Vector{T}, p::Real, len::Int, k::Int = 0, wid::Int = len) where {T<:Number}
+function norm_for_grid(
+    f::Vector{T},
+    p::Real,
+    len::Int,
+    k::Int = 0,
+    wid::Int = len;
+    is_norm::Bool = true,
+) where {T<:Number}
     if k === 0
         f_all = f
     elseif k === 1
         f = reshape(f, len, wid)
-        f_1 = f[2:end, :] - f[1:end-1, :]
-        f_2 = f[:, 2:end] - f[:, 1:end-1]
-        f_all = [f[:]; f_1[:]; f_2[:]]
+        f_1 =
+            [
+                f[2:2, :] - f[1:1, :]
+                f[3:end, :] - f[1:end-2, :]
+                f[end:end, :] - f[end-1:end-1, :]
+            ] .* (1 + len)
+        f_2 =
+            [f[:, 2] - f[:, 1] f[:, 3:end] - f[:, 1:end-2] f[:, end] - f[:, end-1]] .*
+            (1 + wid)
+        f_all = [f_1[:]; f_2[:]]
+        if is_norm
+            f_all = [f_all; f[:]]
+        end
     end
     if p === Inf
         return norm(f_all, Inf)
@@ -166,5 +185,7 @@ include("HeatEquation.jl")
 include("ConvectionDiffusionEquation.jl")
 
 include("FiniteElementMethod.jl")
+
+include("SpectralMethod.jl")
 
 end

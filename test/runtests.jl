@@ -1,4 +1,6 @@
 using NumericalSolutionOfPartialDifferentialEquations
+import NumericalSolutionOfPartialDifferentialEquations.u_alpha
+import NumericalSolutionOfPartialDifferentialEquations.f_alpha
 using Test
 
 @testset "NumericalSolutionOfPartialDifferentialEquations.jl" begin
@@ -19,4 +21,13 @@ using Test
         f = (x, y) -> -2.0 * (x^2 + y^2 - x - y),
         u = (x, y) -> x * (x - 1) * y * (y - 1),
     ) < 0.000162601471
+    @test test_solve_poissions_equation_known(;
+        scheme = :FEM,
+        bound_func = [u_alpha, u_alpha, u_alpha, u_alpha],
+        f = f_alpha,
+        u = u_alpha,
+        norm_p = 2,
+        norm_k = 1,
+        is_norm = false,
+    ) < 0.0105706
 end

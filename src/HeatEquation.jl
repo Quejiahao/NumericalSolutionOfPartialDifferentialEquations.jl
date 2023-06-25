@@ -251,7 +251,7 @@ function homework2(; mu = 10.0, i_num = 8)
             ],
         )
     end
-    err = [result[i][end-5:end] for i = 1:length(result)]
+    err = [result[i][end-5:end] for i = eachindex(result)]
     log2_err = [log2.(x) for x in err]
     append!(result, [[err; log2_err]])
     return result
