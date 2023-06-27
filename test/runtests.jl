@@ -29,5 +29,6 @@ using Test
         norm_p = 2,
         norm_k = 1,
         is_norm = false,
+        integral_method = :HCubature
     ) < 0.0105706
 end

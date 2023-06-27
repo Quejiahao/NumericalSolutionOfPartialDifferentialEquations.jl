@@ -124,6 +124,8 @@ function _fval_element_load_vector(
 ) where {T<:Number}
     if integral_method === :piecewise_linear
         return [f(Ae[:, i]...) for i = 1:size(Ae, 2)]
+    elseif integral_method === :HCubature
+        return
     else
         error("Unknown integral method: ", integral_method)
     end
@@ -274,9 +276,9 @@ function homework4(;
     norm_p = Inf,
     norm_k = 0,
     is_norm = true,
+    min_log2_size = 2,
     kw...,
 )
-    min_log2_size = 2
     err = zeros(max_log2_size - min_log2_size + 1)
     Ts = zeros(max_log2_size - min_log2_size + 1)
     for i = min_log2_size:max_log2_size
@@ -316,11 +318,30 @@ end
 
 function construct_1d_stiffness_matrix(N::Int)
     pi_3N = pi / (3 * N)
-    K = con_tri_diag(N + 1, 2 * pi_3N, pi / (6 * N))
-    K[0, 0] = K[N+1, N+1] = pi_3N
+    N_pi = N / pi
+    pi_3N_N_pi = pi_3N + N_pi
+    K = con_tri_diag(N + 1, 2 * pi_3N_N_pi, pi / (6 * N) - N_pi)
+    K[1, 1] = K[N+1, N+1] = pi_3N_N_pi
     return K
 end
 
-function construct_1d_load_vector(N)
-
+function construct_1d_load_vector(N::Int, f::Function)
+    N_pi = N / pi
+    xs = (0:N) .* pi ./ N
+    F = zeros(N + 1)
+    for i = 1:N-1
+        F[i+1] = hquadrature(
+            x -> (
+                f(x) * (
+                    (x < xs[i+1]) ? (N_pi * (x - xs[i+1]) + 1) :
+                    (-N_pi * (x - xs[i+1]) + 1)
+                )
+            ),
+            xs[i],
+            xs[i+2],
+        )[1]
+    end
+    F[1] = hquadrature(x -> (f(x) * (-N_pi * (x - xs[1]) + 1)), xs[1], xs[2])[1]
+    F[N+1] = hquadrature(x -> (f(x) * (N_pi * (x - xs[N+1]) + 1)), xs[N], xs[N+1])[1]
+    return F
 end

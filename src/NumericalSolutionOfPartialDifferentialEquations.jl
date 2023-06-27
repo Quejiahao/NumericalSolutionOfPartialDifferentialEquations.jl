@@ -119,14 +119,14 @@ function plot_2d_solution(
     scheme = :FDM,
     kw...,
 ) where {T<:Number}
-    # if scheme === :FEM
-    #     x_grid, y_grid = construct_grid_point_FEM(len, wid)
-    # else
     xs = range(0.0, 1.0, wid + 2)[2:end-1]
-    ys = range(1.0, 0.0, len + 2)[2:end-1]
-    x_grid = [x for x in xs for y in ys]
-    y_grid = [y for x in xs for y in ys]
-    # end
+    if scheme === :FEM
+        ys = range(0.0, 1.0, len + 2)[2:end-1]
+    else
+        ys = range(1.0, 0.0, len + 2)[2:end-1]
+    end
+        x_grid = [x for x in xs for y in ys]
+        y_grid = [y for x in xs for y in ys]
     @eval (@__MODULE__) begin
         using Plots
         theme(:orange)
@@ -134,10 +134,49 @@ function plot_2d_solution(
     end
 end
 
+function plot_1d_solution(
+    x::Vector{T},
+    y::Vector{T};
+    kw...,
+) where {T<:Number}
+    @eval (@__MODULE__) begin
+        using Plots
+        theme(:orange)
+        display(plot($x, $y; $kw...))
+    end
+end
+
 function conjugate_gradient_inverse_divide(A, b)
     f = x -> (x' * A / 2 - b') * x
     g! = (G, x) -> (G[:] = (A * x - b))
     return optimize(f, g!, zeros(length(b)), ConjugateGradient()).minimizer
+end
+
+function norm_for_1d_grid(
+    f::Vector{T},
+    p::Real,
+    int_size::Vector{T} = 1 / (len(f) + 1),
+    k::Int = 0;
+    is_norm::Bool = true,
+) where {T<:Number}
+    if k === 0
+        f_all = f
+    elseif k === 1
+        f_all =
+            [
+                f[2] - f[1]
+                f[3:end] - f[1:end-2]
+                f[end] - f[end-1]
+            ] ./ int_size
+        if is_norm
+            f_all = [f_all; f[:]]
+        end
+    end
+    if p === Inf
+        return norm(f_all, Inf)
+    else
+        return sum(abs.(f_all) .^ p .* int_size) .^ (1 / p)
+    end
 end
 
 """
